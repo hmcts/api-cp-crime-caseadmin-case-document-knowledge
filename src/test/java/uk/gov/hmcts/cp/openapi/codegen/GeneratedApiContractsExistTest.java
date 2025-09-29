@@ -28,7 +28,7 @@ class GeneratedApiContractsExistTest {
         assertEquals("Case Documents AI Responses API", info.getTitle());
         assertEquals("API description", info.getDescription());
 
-        String apiGitHubRepository = "api-hmcts-marketplace-template";
+        String apiGitHubRepository = "api-cp-crime-caseadmin-case-document-knowledge";
         String expectedVersion = System.getProperty("API_SPEC_VERSION", "0.0.0");
         log.info("API version set to: {}", expectedVersion);
 

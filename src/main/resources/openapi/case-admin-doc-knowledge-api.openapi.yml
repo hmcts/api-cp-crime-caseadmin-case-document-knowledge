@@ -10,7 +10,7 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: https://virtserver.swaggerhub.com/HMCTS-DTS/api-hmcts-marketplace-template/0.0.0
+  - url: https://virtserver.swaggerhub.com/HMCTS-DTS/api-cp-crime-caseadmin-case-document-knowledge/0.0.0
 
 tags:
   - name: Queries

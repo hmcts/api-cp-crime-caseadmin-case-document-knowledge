@@ -1,90 +1,132 @@
-# API HMCTS Marketplace Template Repository
+# Case Q&A API — README
 
-This is a template repository for HMCTS Marketplace APIs. It defines naming conventions, structure, and validation tooling for OpenAPI specifications.
+**Repository:** api-cp-crime-caseadmin-case-document-knowledge
 
-The repository template and its associated build workflows are designed to support a single API specification per repository.
+**Purpose:** This repository contains the OpenAPI specification, generated server/client stubs and test harness for the Case Documents AI Responses API — a service that accepts user queries about case documents (e.g., "Summary of witness statements"), ingests case materials, runs retrieval-augmented generation (RAG) and returns AI-generated answers with source citations and the original user question echoed back.
 
-> 🔗 API definitions should follow the [HMCTS RESTful API Standards](https://hmcts.github.io/restful-api-standards/).
+---
 
-## Naming Convention
+## Quick links
 
-> NOTE: Avoid using terms like `common, core, base, utils, helpers, misc, or shared`.
-> These names often allow for ambiguous ownership and quickly become black holes where cohesion goes to die.
+* OpenAPI spec: `src/main/resources/openapi/case-qna-api.openapi.v1.yml`
+* Generated sources: `build/generated/src/main/java` (populated by `openApiGenerate`)
+* Main Gradle tasks:
 
-Repository names follow a pattern from generic to specific:
+    * `./gradlew openApiGenerate` — generate APIs & models from OpenAPI
+    * `./gradlew clean build` — full build
+    * `./gradlew test` — run tests
 
+---
+
+## API summary (contract highlights)
+
+This API exposes a small, focused set of endpoints to list queued queries and retrieve AI answers.
+
+### Endpoints
+
+* `GET /queries` — list pipeline status and queued `queries`.
+
+    * Response: `QueryStatusResponse` with `status` (UPLOADED | INGESTED | ANSWERS_AVAILABLE) and an array of `QuerySummary` (`queryId`, `userQuery`).
+
+* `GET /answers/{queryId}` — get the AI-generated answer for a `queryId` (also returns the `userQuery`).
+
+    * Response: `AnswerResponse` with fields: `queryId`, `userQuery`, `answer`, `dateCreated`.
+
+* `POST /answers/{queryId}` — POST variant that returns the same `AnswerResponse` (supported for UI flexibility).
+
+* `GET /answers/{queryId}/integration` — integration/testing endpoint; returns `AnswerWithLlmResponse` (includes `llmInput` used by the LLM).
+
+* `POST /answers/{queryId}/integration` — POST variant for the integration endpoint.
+
+> All path parameters are declared at the path level. Responses use JSON and timestamps use the format `YYYY-MM-DD HH:mm:ss`.
+
+---
+
+## OpenAPI & generation notes
+
+1. **Spec file name**: `case-qna-api.openapi.v1.yml` (under `src/main/resources/openapi`). Keep this name — Gradle expects `*.openapi.yml`.
+
+2. **Generator configuration** (recommended):
+
+    * Use OpenAPI Generator `spring` server template (see `build.gradle`).
+    * `configOptions` used in this repo intentionally set `useLombok=false` for generated models to avoid duplicate-constructor compilation errors (the generator emits explicit constructors).
+
+3. **Avoid model name collisions**: rename generic models like `Error` to `ApiError` in the spec if you see conflicts with `java.lang.Error`.
+
+4. **Regenerate** after editing the spec:
+
+```bash
+./gradlew clean openApiGenerate spotlessApply build
 ```
-api-{sources-system}-[case-type]-{business-domain}-{name-of-entity}
+
+This project uses Spotless to format generated sources; `spotlessApply` runs automatically before `compileJava`.
+
+---
+
+## Building & testing
+
+1. Build and generate sources
+
+```bash
+./gradlew clean openApiGenerate build
 ```
-* `sources-system`: 
-Some examples are:
-  * `cp` - Common Platform
-  * `dcs` - Crown Court Digital Case System
-    
-* `case-type`: optional parameter could be:
 
-  * civil 
-  * crime 
-  * family 
-  * tribunal
+2. Run tests
 
-HMCTS manages all Civil, Criminal, Family (separate from civil), and Tribunal cases.
-
-* `business-domain`, or also could be known as `product-domain`
-
-The Common Platform (CP) will be:
-  * `caseingestion`
-  * `casematerial`
-  * `caseadmin`
-  * `casehearing`
-  * `schedulingandlisting`
-
-### Reference Data Repositories
-
-Reference data APIs use the following naming format:
-
+```bash
+./gradlew test
 ```
-api-cp-refdata-{product-domain}-{name-of-entity}
+
+3. If you hit Lombok/model constructor issues, see `build.gradle` config: ensure generated models are created without `@AllArgsConstructor`/`@NoArgsConstructor` annotations (this project disables Lombok on generated models).
+
+---
+
+## Example requests
+
+**List queries**
+
+```bash
+curl -sS https://api.example.com/queries | jq '.'
 ```
-It could be argued that `product-domain` should be optional for reference data, placing it under global ownership. But global ownership often means no ownership — and no accountability. Therefore, `product-domain` is **required**.
 
-## Supporting Documents
+**Get answer (GET)**
 
-The [`docs`](./docs) directory includes supporting information for the repository:
+```bash
+curl -sS https://api.example.com/answers/1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10 | jq '.'
+```
 
-- [`API-VERSIONING-STRATEGY.md`](./docs/API-VERSIONING-STRATEGY.md) – How we version APIs using media types and SemVer.
-- [`CHAIN_OF_CUSTODY.md`](./docs/CHAIN_OF_CUSTODY.md) – Steps taken to establish a secure software supply chain and audit trail.
-- [`DATA-PRODUCTS.md`](./docs/DATA-PRODUCTS.md) – Description of structured data outputs generated by the API.
-- [`GITHUB-ACTIONS.md`](./docs/GITHUB-ACTIONS.md) – Overview of GitHub Actions workflows, including secrets and variables.
-- [`OPENAPI-FILE-CONVENTIONS.md`](./docs/OPENAPI-FILE-CONVENTIONS.md) – OpenAPI file and content conventions.
-- [`OPENAPI-SPEC-VERSIONING.md`](./docs/OPENAPI-SPEC-VERSIONING.md) – Rules for evolving OpenAPI specs.
-  
-> **Note** the build requires secrets and variables to be available in project settings; see [GitHub Actions: Required Secrets and Variables](./docs/GITHUB-ACTIONS.md)
+**Get answer (POST)**
 
-## Post-Template Manual Steps
+```bash
+curl -sS -X POST https://api.example.com/answers/1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10 -H 'Content-Type: application/json' -d '{}' | jq '.'
+```
 
-### Setup
+**Integration endpoint (GET)**
 
-* Go to settings of the repository -> General -> check "Automatically delete head branches"
-* Import the ruleset `.github/rulesets/main.json`  
-  To import the ruleset, follow GitHub’s instructions here:  
-  👉 [Importing a ruleset](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/managing-rulesets-for-a-repository#importing-a-ruleset)
-  
-Once the ruleset has been successfully imported via GitHub Settings, the new repository no longer requires `.github/rulesets/main.json` so it **should be deleted**:
+```bash
+curl -sS https://api.example.com/answers/1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10/integration | jq '.'
+```
 
-### Clean Up
+---
 
-After using this template to create your repository, the following files are no longer needed and **should be deleted**:
+## Developer notes
 
-- `./docs/*`
-- `./src/main/resources/openapi/deleteme`
+* The loader `OpenAPIConfigurationLoader` reads the YAML spec at runtime and exposes it as a Spring bean (if wired). Tests validate the expected `info` block and schema presence.
+* Tests in `src/test/java` include reflection-based checks for generated APIs and models, and example payload (de)serialization tests.
+* Keep `API_SPEC_VERSION` in Gradle or via `-DAPI_SPEC_VERSION` during tests to control the `info.version` used by the loader.
 
-Update the `./README.md` to reflect the context of the new created repository
+---
 
-### Contribute to This Repository
+## Contributing
 
-Contributions are welcome! Please see the [CONTRIBUTING.md](.github/CONTRIBUTING.md) file for guidelines.
+Follow the repository template conventions. See `.github/CONTRIBUTING.md` for PR and branching rules. After creating a repository from this template, **delete** template-specific docs you don’t need (see repo root instructions).
+
+---
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License. See `LICENSE` for details.
+
+---
+
+If you want I can also create a lighter `READ.md` variant (single-page quick-start) — say `yes` and I will create it for download.

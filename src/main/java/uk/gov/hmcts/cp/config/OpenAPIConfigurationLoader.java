@@ -1,41 +1,60 @@
 package uk.gov.hmcts.cp.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
+import io.swagger.v3.parser.core.models.SwaggerParseResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
-import org.apache.commons.lang3.StringUtils;
-
-public class OpenAPIConfigurationLoader {
+public final class OpenAPIConfigurationLoader {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenAPIConfigurationLoader.class);
-    private static final String JUDGES_OPENAPI = "openapi/TODO_ADD_FILENAME.openapi.yml";
+
+    // Match your Gradle include("*.openapi.yml")
+    private static final String SPEC_PATH = "openapi/case-admin-doc-knowledge-api.openapi.yml";
+
 
     public static OpenAPI loadOpenApiFromClasspath(final String path) {
-        if (StringUtils.isBlank(path)) {
+        if (path == null || path.isBlank()) {
             throw new IllegalArgumentException("Provided path is null or blank");
         }
 
-        try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(path)) {
+        try (InputStream inputStream =
+                     Thread.currentThread().getContextClassLoader().getResourceAsStream(path)) {
+
             if (inputStream == null) {
-                LOG.error("OpenAPI specification file path is required but was null or blank");
+                LOG.error("OpenAPI specification file not found on classpath: {}", path);
                 throw new IllegalArgumentException("Missing resource: " + path);
             }
+
             final String yaml = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-            return new OpenAPIV3Parser().readContents(yaml, null, null).getOpenAPI();
+            if (yaml.isBlank()) {
+                throw new IllegalArgumentException("OpenAPI specification is empty: " + path);
+            }
+
+            SwaggerParseResult result = new OpenAPIV3Parser().readContents(yaml, null, null);
+            if (result == null || result.getOpenAPI() == null) {
+                String messages = (result != null && result.getMessages() != null)
+                        ? String.join("; ", result.getMessages())
+                        : "Unknown parser error";
+                LOG.error("Failed to parse OpenAPI spec at {}: {}", path, messages);
+                throw new IllegalStateException("Failed to parse OpenAPI spec at " + path + ": " + messages);
+            }
+
+            return result.getOpenAPI();
+
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new UncheckedIOException("Failed to load OpenAPI spec from classpath: " + path, e);
         }
     }
 
-    public final OpenAPI openAPI() {
-        return loadOpenApiFromClasspath(JUDGES_OPENAPI);
+    /** Convenience accessor using the default SPEC_PATH. */
+    public OpenAPI openAPI() {
+        return loadOpenApiFromClasspath(SPEC_PATH);
     }
 }

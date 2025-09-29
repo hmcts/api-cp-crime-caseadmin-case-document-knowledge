@@ -4,59 +4,48 @@ plugins {
     id 'com.diffplug.spotless' version '7.2.1'
     id 'jacoco'
     id 'maven-publish'
-    id "com.github.ben-manes.versions" version "0.52.0"
-    id "org.cyclonedx.bom" version "2.4.0"
+    id 'com.github.ben-manes.versions' version '0.52.0'
+    id 'org.cyclonedx.bom' version '2.4.0'
     id 'pmd'
 }
 
 group = 'uk.gov.hmcts.cp'
 version = System.getProperty('API_SPEC_VERSION') ?: '0.0.999'
+
 def githubActor = project.findProperty("github.actor") ?: System.getenv("GITHUB_ACTOR")
 def githubToken = project.findProperty("github.token") ?: System.getenv("GITHUB_TOKEN")
-def githubRepo = System.getenv("GITHUB_REPOSITORY")
+def githubRepo  = System.getenv("GITHUB_REPOSITORY")
 
 def azureADOArtifactRepository = 'https://pkgs.dev.azure.com/hmcts/Artifacts/_packaging/hmcts-lib/maven/v1'
 def azureADOArtifactActor = System.getenv("AZURE_DEVOPS_ARTIFACT_USERNAME")
 def azureADOArtifactToken = System.getenv("AZURE_DEVOPS_ARTIFACT_TOKEN")
 
-
-//debugging
-//    if (githubActor != null) {
-//      println "🔐 Configuring GitHub Packages publishing to: https://maven.pkg.github.com/$githubRepo"
-//    }
-//    println "GitHub Packages publishing required environment variables:"
-//    println " - GITHUB_ACTOR=${githubActor != null ? ' ✔ FOUND' : '❌'}"
-//    println " - GITHUB_TOKEN=${githubToken != null ? ' ✔ FOUND' : '❌'}"
-//    println " - GITHUB_REPOSITORY=${githubRepo != null ? ' ✔ FOUND' : '❌'}"
-
-//    println "Azure ADO publishing required environment variables:"
-//    println " - AZURE_DEVOPS_ARTIFACT_USERNAME=${azureADOArtifactActor != null ? ' ✔ FOUND' : '❌'}"
-//    println " - AZURE_DEVOPS_ARTIFACT_TOKEN=${azureADOArtifactToken != null ? ' ✔ FOUND' : '❌'}"
-
 java {
-    def javaVersion = JavaVersion.toVersion(System.getProperty("java.version"))
-    sourceCompatibility = javaVersion
-    targetCompatibility = javaVersion
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url = azureADOArtifactRepository }
 }
 
 sourceSets {
     main {
-        java {
-            srcDir "$buildDir/generated/src/main/java"
-        }
+        java.srcDir("$buildDir/generated/src/main/java")
     }
 }
 
 tasks.withType(JavaCompile).configureEach {
+    // keep builds strict, but don’t fail on generated code formatting issues (Spotless handles that)
     options.compilerArgs = ["-Xlint:unchecked", "-Werror"]
 }
 
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
-
-    testLogging {
-        exceptionFormat = 'full'
-    }
+    testLogging { exceptionFormat = 'full' }
 }
 
 tasks.named('test') {
@@ -69,8 +58,8 @@ tasks.named('test') {
         showStandardStreams = true
     }
     reports {
-        junitXml.required.set(true) // For CI tools (e.g. Jenkins, GitHub Actions)
-        html.required.set(true)     // Human-readable browser report
+        junitXml.required.set(true)
+        html.required.set(true)
     }
 }
 
@@ -83,35 +72,22 @@ tasks.named('jacocoTestReport') {
     }
 }
 
-tasks.named('check') {
-    dependsOn tasks.named('jacocoTestReport')
-}
+tasks.named('check') { dependsOn tasks.named('jacocoTestReport') }
 
-// check dependencies upon release ONLY
+// Dependency update policy: prefer stable unless current is stable
 tasks.named("dependencyUpdates").configure {
-    def isNonStable = { String version ->
-        def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { qualifier -> version.toUpperCase().contains(qualifier) }
+    def isNonStable = { String v ->
+        def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { v.toUpperCase().contains(it) }
         def regex = /^[0-9,.v-]+$/
-        return !stableKeyword && !(version ==~ regex)
+        !stableKeyword && !(v ==~ regex)
     }
-    rejectVersionIf {
-        isNonStable(it.candidate.version) && !isNonStable(it.currentVersion)
-    }
+    rejectVersionIf { isNonStable(it.candidate.version) && !isNonStable(it.currentVersion) }
 }
 
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven {
-        url = azureADOArtifactRepository
-    }
-}
-
+// ---- Publishing (GitHub Packages + Azure Artifacts) ----
 publishing {
     publications {
-        mavenJava(MavenPublication) {
-            from components.java
-        }
+        mavenJava(MavenPublication) { from components.java }
     }
     repositories {
         maven {
@@ -133,10 +109,9 @@ publishing {
     }
 }
 
-//Creation of Software Bill of Materials
-//https://github.com/CycloneDX/cyclonedx-gradle-plugin
+// ---- CycloneDX SBOM ----
 cyclonedxBom {
-    projectType = "library" // or application
+    projectType = "library"
     includeConfigs = ["runtimeClasspath"]
     skipConfigs = ["test", "testImplementation"]
     schemaVersion = "1.6"
@@ -147,13 +122,13 @@ cyclonedxBom {
     outputFormat = "json"
 }
 
+// Package CHANGELOG + SBOM in the JAR
 jar {
     dependsOn tasks.named('cyclonedxBom')
+
     if (file("CHANGELOG.md").exists()) {
         println "✅ Including CHANGELOG.md in JAR"
-        from('CHANGELOG.md') {
-            into 'META-INF'
-        }
+        from('CHANGELOG.md') { into 'META-INF' }
     } else {
         println "⚠️  CHANGELOG.md not found, skipping inclusion in JAR"
     }
@@ -170,6 +145,7 @@ jar {
     }
 }
 
+// ---- OpenAPI generation ----
 def inputSpecFile = fileTree("src/main/resources/openapi").matching {
     include("*.openapi.yml")
 }.singleFile
@@ -178,10 +154,6 @@ tasks.named("openApiGenerate") {
     inputs.file(inputSpecFile)
 }
 
-//The OpenAPI generator automatically generates constructors for models based on the schema.
-//Applying Lombok’s @AllArgsConstructor and @lombok.NoArgsConstructor will try to generate a constructor with the same signature for simple schemas.
-//The duplicate constructors can cause compilation errors so remove these annotations.
-//If a schema is more complicated, @lombok.AllArgsConstructor and @lombok.NoArgsConstructor will generate other constructors which will not clash and should remain in the configuration.
 openApiGenerate {
     generatorName = "spring"
     inputSpec = inputSpecFile.absolutePath
@@ -191,37 +163,42 @@ openApiGenerate {
     generateModelTests = true
     generateApiTests = true
     cleanupOutput = true
+    // IMPORTANT: do NOT add Lombok constructors to generated models
     configOptions = [
-            validateSpec                  : "true",
-            dateLibrary                   : "java8",
-            interfaceOnly                 : "true",
-            hideGenerationTimestamp       : "true",
-            useJakartaEe                  : "true",
-            useBeanValidation             : "true",
-            useTags                       : "true",
-            useSpringBoot3                : "true",
-            implicitHeaders               : "false",
-            performBeanValidation         : "true",
-            additionalModelTypeAnnotations: "@lombok.Builder;@lombok.AllArgsConstructor;@lombok.NoArgsConstructor",
-            serializableModel             : "true",
-            openApiNullable               : "false"
+            validateSpec            : "true",
+            dateLibrary             : "java8",
+            interfaceOnly           : "true",
+            hideGenerationTimestamp : "true",
+            useJakartaEe            : "true",
+            useBeanValidation       : "true",
+            useTags                 : "true",
+            useSpringBoot3          : "true",
+            implicitHeaders         : "false",
+            performBeanValidation   : "true",
+            serializableModel       : "true",
+            openApiNullable         : "false",
+            useLombok               : "false"   // <- avoids duplicate ctor clash
+            // additionalModelTypeAnnotations intentionally omitted
     ]
 }
 
 tasks.named('compileJava') {
-    dependsOn tasks.named('spotlessApply')
+    dependsOn tasks.named('spotlessApply'), tasks.named('openApiGenerate')
 }
 
-def formatterUrl = 'https://raw.githubusercontent.com/hmcts/api-cp-code-style/refs/heads/main/config/formatter/eclipse-formatter.xml'
+// ---- Spotless (format generated sources) ----
+def formatterUrl  = 'https://raw.githubusercontent.com/hmcts/api-cp-code-style/refs/heads/main/config/formatter/eclipse-formatter.xml'
 def formatterPath = "${layout.buildDirectory.get().asFile.absolutePath}/eclipse-formatter.xml"
+
 tasks.register('downloadFormatter') {
     outputs.file(formatterPath)
     doLast {
-        def file = new File(formatterPath)
-        file.parentFile.mkdirs()
-        file.text = new URI(formatterUrl).toURL().text
+        def f = new File(formatterPath)
+        f.parentFile.mkdirs()
+        f.text = new URI(formatterUrl).toURL().text
     }
 }
+
 spotless {
     java {
         target 'build/generated/src/main/**/*.java'
@@ -237,52 +214,55 @@ tasks.named('spotlessJava') {
     dependsOn tasks.named('openApiGenerate'), tasks.named('downloadFormatter')
 }
 
-tasks.withType(Checkstyle).configureEach {
-    def generatedDir = file("${layout.buildDirectory.get().asFile.absolutePath}/generated/src/main/java").canonicalPath
-    source = source.filter { file ->
-        !file.canonicalPath.startsWith(generatedDir)
-    }
-}
-
+// ---- Static analysis ----
 pmd {
     ruleSets = []
     ruleSetFiles = files(".github/pmd-ruleset.xml")
     ignoreFailures = false
 }
-
 tasks.withType(Pmd) {
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-    }
+    // exclude generated sources
+    def genDir = file("${layout.buildDirectory.get().asFile.absolutePath}/generated/src/main/java").canonicalPath
+    source = source.filter { !it.canonicalPath.startsWith(genDir) }
+    reports { xml.required.set(true); html.required.set(true) }
 }
-tasks.named("pmdMain").configure {
-    onlyIf { gradle.startParameter.taskNames.contains(name) }
-}
+tasks.named("pmdMain").configure { onlyIf { gradle.startParameter.taskNames.contains(name) } }
 tasks.named("pmdTest").configure { enabled = false }
 
+// ---- Versions / libs ----
 ext {
+    // NOTE: prefer a stable Spring Boot 3.3.x+ for Java 21; adjust as needed.
     springBootVersion = "4.0.0-M2"
-    lombokVersion = "1.18.38"
+    lombokVersion     = "1.18.38"
 }
 
 dependencies {
-    // OpenAPI Generator runtime support
-    implementation 'org.openapitools:openapi-generator-core:7.15.0'
-    implementation 'io.swagger.parser.v3:swagger-parser:2.1.34'
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.37'
-    implementation 'net.logstash.logback:logstash-logback-encoder:8.1'
+    // Keep generator libs OUT of your runtime JAR (plugin handles them). No need for:
+    // implementation 'org.openapitools:openapi-generator-core:...'
+    // implementation 'io.swagger.parser.v3:swagger-parser:...'
 
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.20'
+    // Generated interfaces will use Spring + Bean Validation annotations
     implementation "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
     implementation "org.springframework.boot:spring-boot-starter-validation:$springBootVersion"
-    testImplementation "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-    compileOnly group: 'org.projectlombok', name: 'lombok', version: lombokVersion
-    testCompileOnly group: 'org.projectlombok', name: 'lombok', version: lombokVersion
-    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: lombokVersion
-    testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: lombokVersion
+    implementation "io.swagger.parser.v3:swagger-parser:2.1.34"
+    implementation "io.swagger.core.v3:swagger-models:2.2.37"
+    // Swagger annotations (compileOnly so you don't leak them transitively)
+    compileOnly 'io.swagger.core.v3:swagger-annotations:2.2.37'
 
-    testImplementation(platform('org.junit:junit-bom:5.13.4'))
+    // Logging util
+    implementation 'net.logstash.logback:logstash-logback-encoder:8.1'
+
+    // Jackson annotations (used by generated models)
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.20'
+
+    // Lombok for YOUR handwritten code (not for generated models)
+    compileOnly "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+    testCompileOnly "org.projectlombok:lombok:$lombokVersion"
+    testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
+
+    // Testing
+    testImplementation platform('org.junit:junit-bom:5.13.4')
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

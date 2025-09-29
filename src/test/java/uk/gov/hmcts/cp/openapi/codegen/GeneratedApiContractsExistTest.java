@@ -1,4 +1,4 @@
-package uk.gov.hmcts.cp.config;
+package uk.gov.hmcts.cp.openapi.codegen;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -7,18 +7,20 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.gov.hmcts.cp.config.OpenAPIConfigurationLoader;
 
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class OpenAPIConfigurationLoaderTest {
+class GeneratedApiContractsExistTest {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenAPIConfigurationLoaderTest.class);
+    private static final Logger log = LoggerFactory.getLogger(GeneratedApiContractsExistTest.class);
 
     @Test
     void openAPI_bean_should_have_expected_properties() {
-        OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
+        OpenAPIConfigurationLoader config = new OpenAPIConfigurationLoader();
+        OpenAPI openAPI = config.openAPI();
         assertNotNull(openAPI);
 
         Info info = openAPI.getInfo();
@@ -29,6 +31,7 @@ class OpenAPIConfigurationLoaderTest {
         String apiGitHubRepository = "api-cp-crime-caseadmin-case-document-knowledge";
         String expectedVersion = System.getProperty("API_SPEC_VERSION", "0.0.0");
         log.info("API version set to: {}", expectedVersion);
+
         assertEquals(expectedVersion, info.getVersion());
 
         License license = info.getLicense();
@@ -63,20 +66,23 @@ class OpenAPIConfigurationLoaderTest {
 
     @Test
     void loadOpenApiFromClasspath_should_throw_for_missing_resource() {
-        Exception ex = assertThrows(IllegalArgumentException.class,
-                () -> OpenAPIConfigurationLoader.loadOpenApiFromClasspath("nonexistent-file.yaml"));
-        assertTrue(ex.getMessage().contains("Missing resource"));
+        Exception exception = assertThrows(IllegalArgumentException.class, () ->
+                OpenAPIConfigurationLoader.loadOpenApiFromClasspath("nonexistent-file.yaml")
+        );
+        assertTrue(exception.getMessage().contains("Missing resource"));
     }
 
     @Test
     void loadOpenApiFromClasspath_should_throw_for_blank_path() {
-        assertThrows(IllegalArgumentException.class,
-                () -> OpenAPIConfigurationLoader.loadOpenApiFromClasspath(" "));
+        assertThrows(IllegalArgumentException.class, () ->
+                OpenAPIConfigurationLoader.loadOpenApiFromClasspath(" ")
+        );
     }
 
     @Test
     void loadOpenApiFromClasspath_should_throw_for_null_path() {
-        assertThrows(IllegalArgumentException.class,
-                () -> OpenAPIConfigurationLoader.loadOpenApiFromClasspath(null));
+        assertThrows(IllegalArgumentException.class, () ->
+                OpenAPIConfigurationLoader.loadOpenApiFromClasspath(null)
+        );
     }
 }

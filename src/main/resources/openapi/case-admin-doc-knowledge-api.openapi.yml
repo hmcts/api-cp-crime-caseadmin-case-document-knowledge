@@ -1,0 +1,215 @@
+openapi: 3.0.3
+info:
+  title: Case Documents AI Responses API
+  description: API description
+  version: 0.0.0
+  contact:
+    email: no-reply@hmcts.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://virtserver.swaggerhub.com/HMCTS-DTS/api-cp-crime-caseadmin-case-document-knowledge/0.0.0
+
+tags:
+  - name: Queries
+  - name: Answers
+
+paths:
+  /queries:
+    get:
+      tags: [Queries]
+      summary: List queries and current processing status
+      description: >
+        Returns pipeline status and the list of initial user questions queued for answering from case documents.
+      operationId: listQueries
+      responses:
+        '200':
+          description: Status and queries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryStatusResponse'
+              examples:
+                sample:
+                  value:
+                    status: INGESTED
+                    queries:
+                      - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
+                        userQuery: "Summary of case based on witness statements"
+                      - queryId: "5b2a0aa4-7e16-4a62-8d7a-3d1c3c1b9f22"
+                        userQuery: "Summary of defendant based on witness statements"
+
+  /answers/{queryId}:
+    parameters:
+      - name: queryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Answers]
+      summary: Get the AI answer for a query
+      description: Retrieves the AI-generated answer for a given query along with the original user question.
+      operationId: getAnswerById
+      responses:
+        '200':
+          description: Answer for the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResponse'
+              examples:
+                sample:
+                  value:
+                    queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
+                    userQuery: "Summary of case based on witness statements"
+                    answer: "jkhkdvlvld ::SourcePage 12"
+                    dateCreated: "2025-01-01 11:11:11"
+        '404':
+          description: Query not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags: [Answers]
+      summary: Get the AI answer for a query (POST, path param)
+      description: POST variant; identical to GET.
+      operationId: postAnswerById
+      responses:
+        '200':
+          description: Answer for the query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResponse'
+        '404':
+          description: Query not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /answers/{queryId}/integration:
+    parameters:
+      - name: queryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Answers]
+      summary: Get the AI answer + LLM input (integration)
+      description: >
+        For integration testing: returns the AI answer, the original user question, and the LLM input used.
+      operationId: getAnswerWithLlmById
+      responses:
+        '200':
+          description: Answer and LLM input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerWithLlmResponse'
+              examples:
+                sample:
+                  value:
+                    queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
+                    userQuery: "Summary of case based on witness statements"
+                    answer: "jkhkdvlvld"
+                    llmInput: "jv,dfnv,nv.,c .,c,"
+                    dateCreated: "2025-01-01 11:11:11"
+        '404':
+          description: Query not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags: [Answers]
+      summary: Get the AI answer + LLM input (POST, integration)
+      description: POST variant; identical to GET.
+      operationId: postAnswerWithLlmById
+      responses:
+        '200':
+          description: Answer and LLM input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerWithLlmResponse'
+        '404':
+          description: Query not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    QueryStatusResponse:
+      type: object
+      required: [status, queries]
+      properties:
+        status:
+          $ref: '#/components/schemas/PipelineStatus'
+        queries:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuerySummary'
+
+    PipelineStatus:
+      type: string
+      enum: [UPLOADED, INGESTED, ANSWERS_AVAILABLE]
+
+    QuerySummary:
+      type: object
+      required: [queryId, userQuery]
+      properties:
+        queryId:
+          type: string
+          format: uuid
+        userQuery:
+          type: string
+          description: The initial question asked by the user.
+
+    AnswerResponse:
+      type: object
+      required: [queryId, userQuery, answer, dateCreated]
+      properties:
+        queryId:
+          type: string
+          format: uuid
+        userQuery:
+          type: string
+          description: The original user question echoed back for clarity.
+        answer:
+          type: string
+          description: AI-generated answer; may include inline citation markers like '::SourcePage N'.
+        dateCreated:
+          type: string
+          pattern: '^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$'
+          example: "2025-01-01 11:11:11"
+
+    AnswerWithLlmResponse:
+      allOf:
+        - $ref: '#/components/schemas/AnswerResponse'
+        - type: object
+          required: [llmInput]
+          properties:
+            llmInput:
+              type: string
+              description: LLM prompt/input captured for diagnostics.
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: "NOT_FOUND"
+        message:
+          type: string
+          example: "Query with id … was not found."

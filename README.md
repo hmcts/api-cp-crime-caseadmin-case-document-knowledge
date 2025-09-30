@@ -1,4 +1,4 @@
-# Case Q&A API — README
+# Case Q&A API 
 
 **Repository:** api-cp-crime-caseadmin-case-document-knowledge
 
@@ -8,13 +8,13 @@
 
 ## Quick links
 
-* OpenAPI spec: `src/main/resources/openapi/case-qna-api.openapi.v1.yml`
+* OpenAPI spec: `src/main/resources/openapi/case-admin-doc-knowledge-api.openapi.yml`
 * Generated sources: `build/generated/src/main/java` (populated by `openApiGenerate`)
 * Main Gradle tasks:
 
-    * `./gradlew openApiGenerate` — generate APIs & models from OpenAPI
-    * `./gradlew clean build` — full build
-    * `./gradlew test` — run tests
+    * `gradle openApiGenerate` — generate APIs & models from OpenAPI
+    * `gradle clean build` — full build
+    * `gradle test` — run tests
 
 ---
 
@@ -68,13 +68,13 @@ This project uses Spotless to format generated sources; `spotlessApply` runs aut
 1. Build and generate sources
 
 ```bash
-./gradlew clean openApiGenerate build
+gradle clean openApiGenerate build
 ```
 
 2. Run tests
 
 ```bash
-./gradlew test
+gradlew test
 ```
 
 3. If you hit Lombok/model constructor issues, see `build.gradle` config: ensure generated models are created without `@AllArgsConstructor`/`@NoArgsConstructor` annotations (this project disables Lombok on generated models).
@@ -126,7 +126,3 @@ Follow the repository template conventions. See `.github/CONTRIBUTING.md` for PR
 ## License
 
 This project is licensed under the MIT License. See `LICENSE` for details.
-
----
-
-If you want I can also create a lighter `READ.md` variant (single-page quick-start) — say `yes` and I will create it for download.

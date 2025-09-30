@@ -20,13 +20,23 @@ paths:
   /queries:
     get:
       tags: [Queries]
-      summary: List queries and current processing status
+      summary: List queries and current ingestion status (as of a timestamp)
       description: >
-        Returns pipeline status and the list of initial user questions queued for answering from case documents.
+        Returns the list of user questions **as of** a given timestamp, including
+        each query's ingestion `status` at that time. If `at` is omitted, the latest
+        snapshot (now) is returned.
       operationId: listQueries
+      parameters:
+        - name: at
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+          description: >
+            Effective timestamp. The service returns, for each query, the latest version
+            whose `effectiveAt` ≤ `at`. If omitted, the latest versions are returned.
       responses:
         '200':
-          description: Status and queries
+          description: Queries (with per-query status) as of the requested time
           content:
             application/json:
               schema:
@@ -34,160 +44,190 @@ paths:
               examples:
                 sample:
                   value:
-                    status: INGESTED
+                    asOf: "2025-05-01T12:00:00Z"
                     queries:
                       - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
                         userQuery: "Summary of case based on witness statements"
+                        queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
+                        status: INGESTED
                       - queryId: "5b2a0aa4-7e16-4a62-8d7a-3d1c3c1b9f22"
                         userQuery: "Summary of defendant based on witness statements"
+                        status: ANSWERS_AVAILABLE
+    post:
+      tags: [Queries]
+      summary: Ingest or upsert queries and set per-query ingestion status (effective at a timestamp)
+      description: >
+        Accepts a batch of queries to upsert. Each item specifies its own `status`.
+        The call records a new **effective** snapshot time for these queries. If `effectiveAt`
+        is omitted, server time is used.
+      operationId: upsertQueries
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryUpsertRequest'
+            examples:
+              sample:
+                value:
+                  effectiveAt: "2025-05-01T12:00:00Z"
+                  queries:
+                    - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
+                      userQuery: "Summary of case based on witness statements"
+                      queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
+                      status: INGESTED
+      responses:
+        '202':
+          description: Accepted and stored (echoes the current as-of view)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryStatusResponse'
+              examples:
+                sample:
+                  value:
+                    asOf: "2025-05-01T12:00:00Z"
+                    queries:
+                      - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
+                        userQuery: "Summary of case based on witness statements"
+                        queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
+                        status: INGESTED
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /answers/{queryId}:
     parameters:
-      - name: queryId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
+      - { name: queryId, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: version, in: query, required: false, schema: { type: integer, minimum: 1 },
+          description: "Return the specific answer version. Takes precedence over `at`." }
+      - { name: at, in: query, required: false, schema: { type: string, format: date-time },
+          description: "Return the latest version with `dateCreated` ≤ `at` (ignored if `version` is provided)." }
     get:
       tags: [Answers]
       summary: Get the AI answer for a query
-      description: Retrieves the AI-generated answer for a given query along with the original user question.
       operationId: getAnswerById
       responses:
         '200':
           description: Answer for the query
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/AnswerResponse'
-              examples:
-                sample:
-                  value:
-                    queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
-                    userQuery: "Summary of case based on witness statements"
-                    answer: "jkhkdvlvld ::SourcePage 12"
-                    dateCreated: "2025-01-01 11:11:11"
+              schema: { $ref: '#/components/schemas/AnswerResponse' }
         '404':
-          description: Query not found
+          description: Query/version not found
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
     post:
       tags: [Answers]
-      summary: Get the AI answer for a query (POST, path param)
-      description: POST variant; identical to GET.
+      summary: Get the AI answer for a query (POST)
       operationId: postAnswerById
       responses:
         '200':
           description: Answer for the query
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/AnswerResponse'
+              schema: { $ref: '#/components/schemas/AnswerResponse' }
         '404':
-          description: Query not found
+          description: Query/version not found
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
 
   /answers/{queryId}/integration:
     parameters:
-      - name: queryId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
+      - { name: queryId, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: version, in: query, required: false, schema: { type: integer, minimum: 1 },
+          description: "Return the specific answer version. Takes precedence over `at`." }
+      - { name: at, in: query, required: false, schema: { type: string, format: date-time },
+          description: "Return the latest version with `dateCreated` ≤ `at` (ignored if `version` is provided)." }
     get:
       tags: [Answers]
       summary: Get the AI answer + LLM input (integration)
-      description: >
-        For integration testing: returns the AI answer, the original user question, and the LLM input used.
       operationId: getAnswerWithLlmById
       responses:
         '200':
           description: Answer and LLM input
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/AnswerWithLlmResponse'
-              examples:
-                sample:
-                  value:
-                    queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
-                    userQuery: "Summary of case based on witness statements"
-                    answer: "jkhkdvlvld"
-                    llmInput: "jv,dfnv,nv.,c .,c,"
-                    dateCreated: "2025-01-01 11:11:11"
+              schema: { $ref: '#/components/schemas/AnswerWithLlmResponse' }
         '404':
-          description: Query not found
+          description: Query/version not found
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
     post:
       tags: [Answers]
       summary: Get the AI answer + LLM input (POST, integration)
-      description: POST variant; identical to GET.
       operationId: postAnswerWithLlmById
       responses:
         '200':
           description: Answer and LLM input
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/AnswerWithLlmResponse'
+              schema: { $ref: '#/components/schemas/AnswerWithLlmResponse' }
         '404':
-          description: Query not found
+          description: Query/version not found
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
 
 components:
   schemas:
-    QueryStatusResponse:
+    QueryUpsertRequest:
       type: object
-      required: [status, queries]
+      required: [queries]
       properties:
-        status:
-          $ref: '#/components/schemas/PipelineStatus'
+        effectiveAt:
+          type: string
+          format: date-time
+          description: Effective timestamp for this upsert batch (default is server time).
         queries:
           type: array
-          items:
-            $ref: '#/components/schemas/QuerySummary'
+          minItems: 1
+          items: { $ref: '#/components/schemas/QuerySummary' }
 
-    PipelineStatus:
+    QueryStatusResponse:
+      type: object
+      required: [asOf, queries]
+      properties:
+        asOf:
+          type: string
+          format: date-time
+          description: The effective timestamp used to assemble this response.
+        queries:
+          type: array
+          items: { $ref: '#/components/schemas/QuerySummary' }
+
+    IngestionStatus:
       type: string
       enum: [UPLOADED, INGESTED, ANSWERS_AVAILABLE]
 
     QuerySummary:
       type: object
-      required: [queryId, userQuery]
+      required: [queryId, userQuery, status]
       properties:
-        queryId:
-          type: string
-          format: uuid
+        queryId: { type: string, format: uuid }
         userQuery:
           type: string
-          description: The initial question asked by the user.
+          description: The initial question asked by the user (as of the effective time).
+        queryPrompt:
+          type: string
+          description: Optional normalized or templated prompt used for this query (if different from `userQuery`).
+        status:
+          $ref: '#/components/schemas/IngestionStatus'
 
     AnswerResponse:
       type: object
-      required: [queryId, userQuery, answer, dateCreated]
+      required: [queryId, userQuery, answer, dateCreated, version]
       properties:
-        queryId:
-          type: string
-          format: uuid
-        userQuery:
-          type: string
-          description: The original user question echoed back for clarity.
-        answer:
-          type: string
-          description: AI-generated answer; may include inline citation markers like '::SourcePage N'.
+        queryId: { type: string, format: uuid }
+        userQuery: { type: string, description: The original user question (as of that answer version). }
+        answer:    { type: string, description: AI-generated answer; may include '::SourcePage N'. }
+        version:   { type: integer, minimum: 1, description: Monotonic answer version. }
         dateCreated:
           type: string
           pattern: '^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$'
@@ -199,17 +239,11 @@ components:
         - type: object
           required: [llmInput]
           properties:
-            llmInput:
-              type: string
-              description: LLM prompt/input captured for diagnostics.
+            llmInput: { type: string, description: LLM prompt/input captured for diagnostics. }
 
     Error:
       type: object
       required: [code, message]
       properties:
-        code:
-          type: string
-          example: "NOT_FOUND"
-        message:
-          type: string
-          example: "Query with id … was not found."
+        code: { type: string, example: "NOT_FOUND" }
+        message: { type: string, example: "Resource not found." }

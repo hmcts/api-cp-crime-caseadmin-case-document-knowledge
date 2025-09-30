@@ -17,14 +17,15 @@ class GeneratedModelContractsExistTest {
                 "uk.gov.hmcts.cp.openapi.model.AnswerWithLlmResponse",
                 "uk.gov.hmcts.cp.openapi.model.QueryStatusResponse",
                 "uk.gov.hmcts.cp.openapi.model.QuerySummary",
-                "uk.gov.hmcts.cp.openapi.model.PipelineStatus"
+                "uk.gov.hmcts.cp.openapi.model.IngestionStatus",   // <- renamed
+                "uk.gov.hmcts.cp.openapi.model.QueryUpsertRequest" // <- new in spec
         );
 
         for (String fqcn : models) {
             assertTrue(classExists(fqcn), "Missing generated model: " + fqcn);
         }
 
-        // Error model may be called 'Error' (your spec) — avoid direct import to prevent confusion with java.lang.Error
+        // Error model may be called 'Error' (your spec)
         assertTrue(classExists("uk.gov.hmcts.cp.openapi.model.Error"), "Missing Error model");
     }
 
@@ -52,6 +53,19 @@ class GeneratedModelContractsExistTest {
         Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.QuerySummary");
         assertHasGetter(cls, "getQueryId");
         assertHasGetter(cls, "getUserQuery");
+    }
+
+    @Test
+    void ingestionStatus_enum_has_expected_values() throws Exception {
+        Class<?> enumCls = Class.forName("uk.gov.hmcts.cp.openapi.model.IngestionStatus");
+        assertTrue(enumCls.isEnum(), "IngestionStatus should be an enum");
+
+        var names = Arrays.stream(enumCls.getEnumConstants())
+                .map(Object::toString)
+                .toList();
+
+        assertTrue(names.containsAll(List.of("UPLOADED", "INGESTED", "ANSWERS_AVAILABLE")),
+                "IngestionStatus must contain UPLOADED, INGESTED, ANSWERS_AVAILABLE. Was: " + names);
     }
 
     // ---------- helpers ----------

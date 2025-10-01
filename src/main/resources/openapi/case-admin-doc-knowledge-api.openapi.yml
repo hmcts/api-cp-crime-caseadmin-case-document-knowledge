@@ -40,6 +40,7 @@ paths:
     get:
       tags: [Query Catalogue]
       summary: List canonical queries (id + label)
+      description: Returns the full catalogue of predefined queries with their stable labels.
       operationId: listQueryCatalogue
       responses:
         '200':
@@ -71,6 +72,7 @@ paths:
     get:
       tags: [Query Catalogue]
       summary: Get a canonical query (id + label)
+      description: Returns the canonical query metadata (id and label) for the specified queryId.
       operationId: getQueryCatalogueItem
       responses:
         '200':
@@ -93,6 +95,7 @@ paths:
     put:
       tags: [Query Catalogue]
       summary: Set or update the canonical label for a query (idempotent)
+      description: Updates the stable display label for a canonical query. This does not affect past or future query definitions.
       operationId: setQueryCatalogueLabel
       requestBody:
         required: true
@@ -205,7 +208,7 @@ paths:
                       queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
       responses:
         '202':
-          description: Accepted and stored (echoes the **definition snapshot** at `effectiveAt` — no per-case status)
+          description: Accepted and stored; returns the **definition snapshot** at `effectiveAt` (no per-case status).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/QueryDefinitionsResponse' }
@@ -224,7 +227,7 @@ paths:
     get:
       tags: [Queries]
       summary: Get a single query for a Case (as-of view)
-      description: Returns the (label + user text + prompt + per-case status) as-of `at`. If omitted, returns the latest.
+      description: Returns the (label + user text + prompt + per-case status) as-of `at`. If omitted, returns the latest for this case.
       operationId: getQuery
       parameters:
         - name: caseId
@@ -252,6 +255,7 @@ paths:
     get:
       tags: [Queries]
       summary: List **definition** version history for a query (no status)
+      description: Returns an ordered history of query definition versions (label, userQuery, queryPrompt, effectiveAt) for the queryId.
       operationId: listQueryVersions
       parameters:
         - name: queryId
@@ -298,6 +302,7 @@ paths:
     get:
       tags: [Answers]
       summary: Get the AI answer for a query (latest, as-of, or by version)
+      description: Returns the AI-generated answer text for the given queryId, by explicit version or as-of timestamp.
       operationId: getAnswerById
       responses:
         '200':
@@ -328,6 +333,7 @@ paths:
     get:
       tags: [Answers]
       summary: Get the AI answer + captured LLM input (diagnostics/integration)
+      description: Returns the answer plus the captured LLM input used to generate it, for diagnostics or integration scenarios.
       operationId: getAnswerWithLlmById
       responses:
         '200':

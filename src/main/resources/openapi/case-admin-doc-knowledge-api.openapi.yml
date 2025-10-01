@@ -10,7 +10,7 @@ info:
     - A specific **version** of an answer
 
     Pipeline (context): IDPC documents are associated to a **Case ID**, uploaded to Azure Blob
-    Storage by a background Spring service, ingested, and then  predefined queries/prompts are
+    Storage by a background Spring service, ingested, and then predefined queries/prompts are
     executed by the LLM with results stored in the DB.
   version: 0.0.0
   contact:
@@ -21,7 +21,6 @@ info:
 
 servers:
   - url: https://virtserver.swaggerhub.com/HMCTS-DTS/api-cp-crime-caseadmin-case-document-knowledge/0.0.0
-
 
 tags:
   - name: Queries
@@ -67,12 +66,14 @@ paths:
                     queries:
                       - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
                         caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
+                        label: "Case Summary (All Witnesses)"
                         userQuery: "Summarise the case based on all witness statements."
                         queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
                         status: ANSWERS_AVAILABLE
                         effectiveAt: "2025-05-01T11:59:00Z"
                       - queryId: "5b2a0aa4-7e16-4a62-8d7a-3d1c3c1b9f22"
                         caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
+                        label: "Defendant Position"
                         userQuery: "Summarise the defendant's position based on witness statements."
                         queryPrompt: "Provide the defendant summary using the supplied witness statements."
                         status: INGESTED
@@ -82,12 +83,17 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
+
     post:
       tags: [Queries]
-      summary: Upsert versioned queries for a Case (effective at timestamp)
+      summary: Upsert versioned **query definitions** (no status) effective at a timestamp
       description: |
-        Accepts a batch of queries to **upsert** for the given Case context.
-        Records a new version effective at `effectiveAt` (server time if omitted) and returns the **as-of** view at that instant.
+        Accepts a batch of **query definition** updates (userQuery + queryPrompt) for canonical queries.
+        This endpoint **does not** accept or change lifecycle status. Status is owned by the background
+        pipeline and exposed via GET endpoints.
+
+        If `effectiveAt` is omitted, server time is used. Optionally provide `scope.caseId` to have
+        the response echo the **as-of** view for that case at the same instant (including per-case status).
       operationId: upsertQueries
       requestBody:
         required: true
@@ -104,10 +110,9 @@ paths:
                     - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
                       userQuery: "Summarise the case based on all witness statements."
                       queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
-                      status: INGESTED
       responses:
         '202':
-          description: Accepted and stored (echoes the as-of view at `effectiveAt`)
+          description: Accepted and stored (echoes the as-of view at `effectiveAt` if a caseId was supplied)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/QueryStatusResponse' }
@@ -125,10 +130,15 @@ paths:
         schema: { type: string, format: uuid }
     get:
       tags: [Queries]
-      summary: Get a single query (as-of view)
-      description: Returns the query (user text + prompt + status) as-of `at`. If omitted, returns the latest.
+      summary: Get a single query for a Case (as-of view)
+      description: Returns the (label + user text + prompt + per-case status) as-of `at`. If omitted, returns the latest.
       operationId: getQuery
       parameters:
+        - name: caseId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+          description: Case context used to compute lifecycle status.
         - name: at
           in: query
           required: false
@@ -148,7 +158,7 @@ paths:
   /queries/{queryId}/versions:
     get:
       tags: [Queries]
-      summary: List version history for a query
+      summary: List **definition** version history for a query (no status)
       operationId: listQueryVersions
       parameters:
         - name: queryId
@@ -157,7 +167,7 @@ paths:
           schema: { type: string, format: uuid }
       responses:
         '200':
-          description: Version history ordered by effectiveAt ascending
+          description: Definition versions ordered by effectiveAt ascending
           content:
             application/json:
               schema:
@@ -166,7 +176,7 @@ paths:
                   queryId: { type: string, format: uuid }
                   versions:
                     type: array
-                    items: { $ref: '#/components/schemas/QuerySummary' }
+                    items: { $ref: '#/components/schemas/QueryVersionSummary' }
         '404':
           description: Not found
           content:
@@ -274,12 +284,12 @@ components:
     # ---- Queries ----
     QueryLifecycleStatus:
       type: string
-      description: Per-query lifecycle state for this version.
+      description: Per-query lifecycle state for this case.
       enum: [UPLOADED, INGESTED, ANSWERS_AVAILABLE]
 
     QuerySummary:
       type: object
-      required: [queryId, userQuery, queryPrompt, status, effectiveAt]
+      required: [queryId, label, userQuery, queryPrompt, status, effectiveAt]
       properties:
         queryId:
           type: string
@@ -288,6 +298,10 @@ components:
           type: string
           format: uuid
           nullable: true
+        label:
+          type: string
+          description: Stable display label for this canonical query (does not change across versions).
+          example: "Case Summary (All Witnesses)"
         userQuery:
           type: string
           description: The user-facing question text for this version.
@@ -300,6 +314,25 @@ components:
           type: string
           format: date-time
           description: Version effective timestamp for this query definition/status.
+
+    QueryVersionSummary:
+      type: object
+      required: [queryId, label, userQuery, queryPrompt, effectiveAt]
+      properties:
+        queryId:
+          type: string
+          format: uuid
+        label:
+          type: string
+          description: Stable display label for this canonical query.
+        userQuery:
+          type: string
+        queryPrompt:
+          type: string
+        effectiveAt:
+          type: string
+          format: date-time
+          description: Version effective timestamp.
 
     QueryUpsertRequest:
       type: object
@@ -316,17 +349,17 @@ components:
           minItems: 1
           items:
             type: object
-            required: [queryId, userQuery, queryPrompt, status]
+            required: [queryId, userQuery, queryPrompt]
             properties:
               queryId:
                 type: string
                 format: uuid
               userQuery:
                 type: string
+                description: The user-facing question text for this **definition version**.
               queryPrompt:
                 type: string
-              status:
-                $ref: '#/components/schemas/QueryLifecycleStatus'
+                description: The normalized prompt for this **definition version**.
 
     QueryStatusResponse:
       type: object
@@ -380,7 +413,8 @@ components:
     DocumentIngestionPhase:
       type: string
       description: Document pipeline phase for a Case.
-      enum: [UPLOADING, UPLOADED, INGESTING, INGESTED, FAILED]
+      enum: [NOT_FOUND, UPLOADING, UPLOADED, INGESTING, INGESTED, FAILED]
+
     IngestionStatusResponse:
       type: object
       properties:

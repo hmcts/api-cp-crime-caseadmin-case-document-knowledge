@@ -24,7 +24,15 @@ class OpenAPIConfigurationLoaderTest {
         Info info = openAPI.getInfo();
         assertNotNull(info);
         assertEquals("Case Documents AI Responses API", info.getTitle());
-        assertEquals("API description", info.getDescription());
+
+        // Resilient checks (wording may change slightly)
+        String desc = info.getDescription();
+        assertNotNull(desc);
+        String lower = desc.toLowerCase();
+        assertTrue(lower.contains("versioned"), "Description should mention versioned resources");
+        assertTrue(lower.contains("as-of"), "Description should mention as-of views");
+        assertTrue(lower.contains("case"), "Description should mention Case context");
+        assertTrue(lower.contains("ingest"), "Description should mention ingestion pipeline");
 
         String apiGitHubRepository = "api-cp-crime-caseadmin-case-document-knowledge";
         String expectedVersion = System.getProperty("API_SPEC_VERSION", "0.0.0");
@@ -48,7 +56,7 @@ class OpenAPIConfigurationLoaderTest {
     }
 
     @Test
-    void answerResponse_should_require_userQuery() {
+    void answerResponse_schema_should_require_userQuery_and_createdAt() {
         OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
         Schema<?> answer = openAPI.getComponents().getSchemas().get("AnswerResponse");
         assertNotNull(answer, "AnswerResponse schema missing");
@@ -56,9 +64,16 @@ class OpenAPIConfigurationLoaderTest {
         Map<String, Schema> props = answer.getProperties();
         assertNotNull(props, "AnswerResponse properties missing");
         assertTrue(props.containsKey("userQuery"), "AnswerResponse must contain userQuery");
+        assertTrue(props.containsKey("createdAt"), "AnswerResponse must contain createdAt");
+
+        Schema<?> createdAt = props.get("createdAt");
+        assertNotNull(createdAt, "createdAt schema missing");
+        assertEquals("string", createdAt.getType(), "createdAt must be a string");
+        assertEquals("date-time", createdAt.getFormat(), "createdAt must have format=date-time");
 
         assertNotNull(answer.getRequired(), "AnswerResponse.required missing");
         assertTrue(answer.getRequired().contains("userQuery"), "userQuery must be required");
+        assertTrue(answer.getRequired().contains("createdAt"), "createdAt must be required");
     }
 
     @Test

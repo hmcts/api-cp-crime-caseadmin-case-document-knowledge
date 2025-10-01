@@ -13,59 +13,79 @@ class GeneratedModelContractsExistTest {
     @Test
     void generated_models_should_exist() {
         List<String> models = List.of(
-                "uk.gov.hmcts.cp.openapi.model.AnswerResponse",
-                "uk.gov.hmcts.cp.openapi.model.AnswerWithLlmResponse",
-                "uk.gov.hmcts.cp.openapi.model.QueryStatusResponse",
-                "uk.gov.hmcts.cp.openapi.model.QuerySummary",
-                "uk.gov.hmcts.cp.openapi.model.IngestionStatus",   // <- renamed
-                "uk.gov.hmcts.cp.openapi.model.QueryUpsertRequest" // <- new in spec
+                "uk.gov.hmcts.cp.openapi.model.cdk.Scope",
+                "uk.gov.hmcts.cp.openapi.model.cdk.AnswerResponse",
+                "uk.gov.hmcts.cp.openapi.model.cdk.AnswerWithLlmResponse",
+                "uk.gov.hmcts.cp.openapi.model.cdk.QueryStatusResponse",
+                "uk.gov.hmcts.cp.openapi.model.cdk.QuerySummary",
+                "uk.gov.hmcts.cp.openapi.model.cdk.QueryUpsertRequest",
+                "uk.gov.hmcts.cp.openapi.model.cdk.QueryLifecycleStatus",
+                "uk.gov.hmcts.cp.openapi.model.cdk.IngestionStatusResponse",
+                "uk.gov.hmcts.cp.openapi.model.cdk.DocumentIngestionPhase",
+                "uk.gov.hmcts.cp.openapi.model.cdk.ErrorResponse"
         );
 
         for (String fqcn : models) {
             assertTrue(classExists(fqcn), "Missing generated model: " + fqcn);
         }
-
-        // Error model may be called 'Error' (your spec)
-        assertTrue(classExists("uk.gov.hmcts.cp.openapi.model.Error"), "Missing Error model");
     }
 
     @Test
     void answerResponse_should_have_expected_accessors() throws Exception {
-        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.AnswerResponse");
+        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.AnswerResponse");
         assertHasGetter(cls, "getQueryId");
         assertHasGetter(cls, "getUserQuery");
         assertHasGetter(cls, "getAnswer");
-        assertHasGetter(cls, "getDateCreated");
+        assertHasGetter(cls, "getCreatedAt");
+        assertHasGetter(cls, "getVersion");
     }
 
     @Test
     void answerWithLlmResponse_should_extend_answer_contract_with_llmInput() throws Exception {
-        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.AnswerWithLlmResponse");
+        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.AnswerWithLlmResponse");
         assertHasGetter(cls, "getQueryId");
         assertHasGetter(cls, "getUserQuery");
         assertHasGetter(cls, "getAnswer");
-        assertHasGetter(cls, "getDateCreated");
+        assertHasGetter(cls, "getCreatedAt");
+        assertHasGetter(cls, "getVersion");
         assertHasGetter(cls, "getLlmInput");
     }
 
     @Test
     void querySummary_should_have_expected_accessors() throws Exception {
-        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.QuerySummary");
+        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.QuerySummary");
         assertHasGetter(cls, "getQueryId");
         assertHasGetter(cls, "getUserQuery");
+        assertHasGetter(cls, "getQueryPrompt");
+        assertHasGetter(cls, "getStatus");      // QueryLifecycleStatus
+        assertHasGetter(cls, "getEffectiveAt"); // required in schema
+        assertHasGetter(cls, "getCaseId");      // lineage (no defendantId anymore)
     }
 
     @Test
-    void ingestionStatus_enum_has_expected_values() throws Exception {
-        Class<?> enumCls = Class.forName("uk.gov.hmcts.cp.openapi.model.IngestionStatus");
-        assertTrue(enumCls.isEnum(), "IngestionStatus should be an enum");
+    void queryLifecycleStatus_enum_has_expected_values() throws Exception {
+        Class<?> enumCls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.QueryLifecycleStatus");
+        assertTrue(enumCls.isEnum(), "QueryLifecycleStatus should be an enum");
 
         var names = Arrays.stream(enumCls.getEnumConstants())
                 .map(Object::toString)
                 .toList();
 
         assertTrue(names.containsAll(List.of("UPLOADED", "INGESTED", "ANSWERS_AVAILABLE")),
-                "IngestionStatus must contain UPLOADED, INGESTED, ANSWERS_AVAILABLE. Was: " + names);
+                "QueryLifecycleStatus must contain UPLOADED, INGESTED, ANSWERS_AVAILABLE. Was: " + names);
+    }
+
+    @Test
+    void documentIngestionPhase_enum_has_expected_values() throws Exception {
+        Class<?> enumCls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.DocumentIngestionPhase");
+        assertTrue(enumCls.isEnum(), "DocumentIngestionPhase should be an enum");
+
+        var names = Arrays.stream(enumCls.getEnumConstants())
+                .map(Object::toString)
+                .toList();
+
+        assertTrue(names.containsAll(List.of("UPLOADING", "UPLOADED", "INGESTING", "INGESTED", "FAILED")),
+                "DocumentIngestionPhase must contain expected states. Was: " + names);
     }
 
     // ---------- helpers ----------

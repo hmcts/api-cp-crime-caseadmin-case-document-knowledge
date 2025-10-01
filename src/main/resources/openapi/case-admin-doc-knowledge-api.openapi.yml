@@ -1,7 +1,17 @@
 openapi: 3.0.3
 info:
   title: Case Documents AI Responses API
-  description: API description
+  description: |
+    Versioned **queries** (user text + normalized prompt + lifecycle status) and **answers**
+    linked to a Case. Clients can fetch:
+
+    - The latest snapshot for a Case
+    - An **as-of** view at a timestamp for reproducibility
+    - A specific **version** of an answer
+
+    Pipeline (context): IDPC documents are associated to a **Case ID**, uploaded to Azure Blob
+    Storage by a background Spring service, ingested, and then  predefined queries/prompts are
+    executed by the LLM with results stored in the DB.
   version: 0.0.0
   contact:
     email: no-reply@hmcts.com
@@ -12,103 +22,176 @@ info:
 servers:
   - url: https://virtserver.swaggerhub.com/HMCTS-DTS/api-cp-crime-caseadmin-case-document-knowledge/0.0.0
 
+
 tags:
   - name: Queries
+    description: Manage and read versioned queries (user text + prompt + status), filtered by Case, with as-of semantics.
   - name: Answers
+    description: Read versioned AI answers for queries (latest, as-of, or by version), optionally including the LLM input for integration.
+  - name: Ingestion
+    description: Document ingestion progress for a Case (blob upload → knowledge ingested).
 
 paths:
   /queries:
     get:
       tags: [Queries]
-      summary: List queries and current ingestion status (as of a timestamp)
-      description: >
-        Returns the list of user questions **as of** a given timestamp, including
-        each query's ingestion `status` at that time. If `at` is omitted, the latest
-        snapshot (now) is returned.
+      summary: List queries for a Case (as-of view)
+      description: |
+        Returns queries for the specified **Case** **as of** the given timestamp.
+        For each `queryId`, chooses the latest version with `effectiveAt` ≤ `at`. If `at` is omitted, returns "now".
       operationId: listQueries
       parameters:
+        - name: caseId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+          description: Filter by Case ID.
         - name: at
           in: query
           required: false
           schema: { type: string, format: date-time }
-          description: >
-            Effective timestamp. The service returns, for each query, the latest version
-            whose `effectiveAt` ≤ `at`. If omitted, the latest versions are returned.
+          description: As-of timestamp used to select the latest version per query. If omitted, "now" is used.
       responses:
         '200':
-          description: Queries (with per-query status) as of the requested time
+          description: Queries as of the requested time
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueryStatusResponse'
               examples:
-                sample:
+                example:
                   value:
                     asOf: "2025-05-01T12:00:00Z"
+                    scope:
+                      caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
                     queries:
                       - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
-                        userQuery: "Summary of case based on witness statements"
+                        caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
+                        userQuery: "Summarise the case based on all witness statements."
                         queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
-                        status: INGESTED
-                      - queryId: "5b2a0aa4-7e16-4a62-8d7a-3d1c3c1b9f22"
-                        userQuery: "Summary of defendant based on witness statements"
                         status: ANSWERS_AVAILABLE
+                        effectiveAt: "2025-05-01T11:59:00Z"
+                      - queryId: "5b2a0aa4-7e16-4a62-8d7a-3d1c3c1b9f22"
+                        caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
+                        userQuery: "Summarise the defendant's position based on witness statements."
+                        queryPrompt: "Provide the defendant summary using the supplied witness statements."
+                        status: INGESTED
+                        effectiveAt: "2025-05-01T11:58:00Z"
+        '400':
+          description: Missing or invalid filters
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
     post:
       tags: [Queries]
-      summary: Ingest or upsert queries and set per-query ingestion status (effective at a timestamp)
-      description: >
-        Accepts a batch of queries to upsert. Each item specifies its own `status`.
-        The call records a new **effective** snapshot time for these queries. If `effectiveAt`
-        is omitted, server time is used.
+      summary: Upsert versioned queries for a Case (effective at timestamp)
+      description: |
+        Accepts a batch of queries to **upsert** for the given Case context.
+        Records a new version effective at `effectiveAt` (server time if omitted) and returns the **as-of** view at that instant.
       operationId: upsertQueries
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/QueryUpsertRequest'
+            schema: { $ref: '#/components/schemas/QueryUpsertRequest' }
             examples:
-              sample:
+              example:
                 value:
                   effectiveAt: "2025-05-01T12:00:00Z"
+                  scope:
+                    caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
                   queries:
                     - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
-                      userQuery: "Summary of case based on witness statements"
+                      userQuery: "Summarise the case based on all witness statements."
                       queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
                       status: INGESTED
       responses:
         '202':
-          description: Accepted and stored (echoes the current as-of view)
+          description: Accepted and stored (echoes the as-of view at `effectiveAt`)
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/QueryStatusResponse'
-              examples:
-                sample:
-                  value:
-                    asOf: "2025-05-01T12:00:00Z"
-                    queries:
-                      - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
-                        userQuery: "Summary of case based on witness statements"
-                        queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
-                        status: INGESTED
+              schema: { $ref: '#/components/schemas/QueryStatusResponse' }
         '400':
           description: Invalid request
           content:
             application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /queries/{queryId}:
+    parameters:
+      - name: queryId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Queries]
+      summary: Get a single query (as-of view)
+      description: Returns the query (user text + prompt + status) as-of `at`. If omitted, returns the latest.
+      operationId: getQuery
+      parameters:
+        - name: at
+          in: query
+          required: false
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Query as-of the requested time
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuerySummary' }
+        '404':
+          description: Query not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /queries/{queryId}/versions:
+    get:
+      tags: [Queries]
+      summary: List version history for a query
+      operationId: listQueryVersions
+      parameters:
+        - name: queryId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Version history ordered by effectiveAt ascending
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  queryId: { type: string, format: uuid }
+                  versions:
+                    type: array
+                    items: { $ref: '#/components/schemas/QuerySummary' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   /answers/{queryId}:
     parameters:
-      - { name: queryId, in: path, required: true, schema: { type: string, format: uuid } }
-      - { name: version, in: query, required: false, schema: { type: integer, minimum: 1 },
-          description: "Return the specific answer version. Takes precedence over `at`." }
-      - { name: at, in: query, required: false, schema: { type: string, format: date-time },
-          description: "Return the latest version with `dateCreated` ≤ `at` (ignored if `version` is provided)." }
+      - name: queryId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: version
+        in: query
+        required: false
+        schema: { type: integer, minimum: 1 }
+        description: Return the specific answer version. Takes precedence over `at`.
+      - name: at
+        in: query
+        required: false
+        schema: { type: string, format: date-time }
+        description: Return the latest answer whose `createdAt` ≤ `at` (ignored if `version` is provided).
     get:
       tags: [Answers]
-      summary: Get the AI answer for a query
+      summary: Get the AI answer for a query (latest, as-of, or by version)
       operationId: getAnswerById
       responses:
         '200':
@@ -120,33 +203,25 @@ paths:
           description: Query/version not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
-    post:
-      tags: [Answers]
-      summary: Get the AI answer for a query (POST)
-      operationId: postAnswerById
-      responses:
-        '200':
-          description: Answer for the query
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/AnswerResponse' }
-        '404':
-          description: Query/version not found
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/Error' }
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   /answers/{queryId}/integration:
     parameters:
-      - { name: queryId, in: path, required: true, schema: { type: string, format: uuid } }
-      - { name: version, in: query, required: false, schema: { type: integer, minimum: 1 },
-          description: "Return the specific answer version. Takes precedence over `at`." }
-      - { name: at, in: query, required: false, schema: { type: string, format: date-time },
-          description: "Return the latest version with `dateCreated` ≤ `at` (ignored if `version` is provided)." }
+      - name: queryId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+      - name: version
+        in: query
+        required: false
+        schema: { type: integer, minimum: 1 }
+      - name: at
+        in: query
+        required: false
+        schema: { type: string, format: date-time }
     get:
       tags: [Answers]
-      summary: Get the AI answer + LLM input (integration)
+      summary: Get the AI answer + captured LLM input (diagnostics/integration)
       operationId: getAnswerWithLlmById
       responses:
         '200':
@@ -158,25 +233,74 @@ paths:
           description: Query/version not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
-    post:
-      tags: [Answers]
-      summary: Get the AI answer + LLM input (POST, integration)
-      operationId: postAnswerWithLlmById
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /ingestions/status:
+    get:
+      tags: [Ingestion]
+      summary: Get document ingestion status for a Case
+      description: Returns the background document ingestion state (blob upload → knowledge ingested) for UI polling.
+      operationId: getIngestionStatus
+      parameters:
+        - name: caseId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
       responses:
         '200':
-          description: Answer and LLM input
+          description: Ingestion status
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/AnswerWithLlmResponse' }
-        '404':
-          description: Query/version not found
+              schema: { $ref: '#/components/schemas/IngestionStatusResponse' }
+        '400':
+          description: Missing filters
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Error' }
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
 
 components:
   schemas:
+    # ---- Common ----
+    Scope:
+      type: object
+      description: Case association for a query batch or response payload.
+      properties:
+        caseId:
+          type: string
+          format: uuid
+      example:
+        caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
+
+    # ---- Queries ----
+    QueryLifecycleStatus:
+      type: string
+      description: Per-query lifecycle state for this version.
+      enum: [UPLOADED, INGESTED, ANSWERS_AVAILABLE]
+
+    QuerySummary:
+      type: object
+      required: [queryId, userQuery, queryPrompt, status, effectiveAt]
+      properties:
+        queryId:
+          type: string
+          format: uuid
+        caseId:
+          type: string
+          format: uuid
+          nullable: true
+        userQuery:
+          type: string
+          description: The user-facing question text for this version.
+        queryPrompt:
+          type: string
+          description: The exact normalized prompt used for this version.
+        status:
+          $ref: '#/components/schemas/QueryLifecycleStatus'
+        effectiveAt:
+          type: string
+          format: date-time
+          description: Version effective timestamp for this query definition/status.
+
     QueryUpsertRequest:
       type: object
       required: [queries]
@@ -185,10 +309,24 @@ components:
           type: string
           format: date-time
           description: Effective timestamp for this upsert batch (default is server time).
+        scope:
+          $ref: '#/components/schemas/Scope'
         queries:
           type: array
           minItems: 1
-          items: { $ref: '#/components/schemas/QuerySummary' }
+          items:
+            type: object
+            required: [queryId, userQuery, queryPrompt, status]
+            properties:
+              queryId:
+                type: string
+                format: uuid
+              userQuery:
+                type: string
+              queryPrompt:
+                type: string
+              status:
+                $ref: '#/components/schemas/QueryLifecycleStatus'
 
     QueryStatusResponse:
       type: object
@@ -198,40 +336,35 @@ components:
           type: string
           format: date-time
           description: The effective timestamp used to assemble this response.
+        scope:
+          $ref: '#/components/schemas/Scope'
         queries:
           type: array
-          items: { $ref: '#/components/schemas/QuerySummary' }
+          items:
+            $ref: '#/components/schemas/QuerySummary'
 
-    IngestionStatus:
-      type: string
-      enum: [UPLOADED, INGESTED, ANSWERS_AVAILABLE]
-
-    QuerySummary:
-      type: object
-      required: [queryId, userQuery, status]
-      properties:
-        queryId: { type: string, format: uuid }
-        userQuery:
-          type: string
-          description: The initial question asked by the user (as of the effective time).
-        queryPrompt:
-          type: string
-          description: Optional normalized or templated prompt used for this query (if different from `userQuery`).
-        status:
-          $ref: '#/components/schemas/IngestionStatus'
-
+    # ---- Answers ----
     AnswerResponse:
       type: object
-      required: [queryId, userQuery, answer, dateCreated, version]
+      required: [queryId, userQuery, answer, createdAt, version]
       properties:
-        queryId: { type: string, format: uuid }
-        userQuery: { type: string, description: The original user question (as of that answer version). }
-        answer:    { type: string, description: AI-generated answer; may include '::SourcePage N'. }
-        version:   { type: integer, minimum: 1, description: Monotonic answer version. }
-        dateCreated:
+        queryId:
           type: string
-          pattern: '^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$'
-          example: "2025-01-01 11:11:11"
+          format: uuid
+        userQuery:
+          type: string
+          description: The user question text as of this answer’s version.
+        answer:
+          type: string
+          description: AI-generated answer; may include '::SourcePage N'.
+        version:
+          type: integer
+          minimum: 1
+          description: Monotonic answer version.
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-01-01T11:11:11Z"
 
     AnswerWithLlmResponse:
       allOf:
@@ -239,11 +372,46 @@ components:
         - type: object
           required: [llmInput]
           properties:
-            llmInput: { type: string, description: LLM prompt/input captured for diagnostics. }
+            llmInput:
+              type: string
+              description: LLM prompt/input captured for diagnostics.
 
-    Error:
+    # ---- Ingestion ----
+    DocumentIngestionPhase:
+      type: string
+      description: Document pipeline phase for a Case.
+      enum: [UPLOADING, UPLOADED, INGESTING, INGESTED, FAILED]
+    IngestionStatusResponse:
       type: object
-      required: [code, message]
       properties:
-        code: { type: string, example: "NOT_FOUND" }
-        message: { type: string, example: "Resource not found." }
+        scope:
+          $ref: '#/components/schemas/Scope'
+        phase:
+          $ref: '#/components/schemas/DocumentIngestionPhase'
+        lastUpdated:
+          type: string
+          format: date-time
+        message:
+          type: string
+          nullable: true
+
+    # ---- Errors ----
+    ErrorResponse:
+      type: object
+      required: [error, message, timestamp, traceId]
+      properties:
+        error:
+          type: string
+          description: Numeric HTTP status code as a string (e.g. "400", "404", "500").
+          example: "404"
+        message:
+          type: string
+          description: Human-readable error description.
+          example: "Resource not found."
+        timestamp:
+          type: string
+          format: date-time
+          description: UTC timestamp when the error was created.
+        traceId:
+          type: string
+          description: Distributed trace id (from the current span) to help correlate logs/traces.

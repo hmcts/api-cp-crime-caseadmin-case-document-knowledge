@@ -93,7 +93,7 @@ class ExamplePayloadBindingTest {
         q.put("queryId", UUID.randomUUID().toString());
         q.put("userQuery", "Summary of case based on witness statements");
         q.put("queryPrompt", "Summarise the case using all witness statements, focusing on timeline.");
-        q.put("status", "INGESTED");
+        q.put("status", "ANSWER_AVAILABLE");
         q.put("effectiveAt", "2025-05-01T11:59:00Z");
 
         root.putArray("queries").add(q);
@@ -121,7 +121,7 @@ class ExamplePayloadBindingTest {
 
         Object status = qCls.getMethod("getStatus").invoke(first);
         String statusText = (status instanceof Enum<?> e) ? e.name() : String.valueOf(status);
-        assertEquals("INGESTED", statusText);
+        assertEquals("ANSWER_AVAILABLE", statusText);
 
         assertEquals(
                 "Summarise the case using all witness statements, focusing on timeline.",

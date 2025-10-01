@@ -23,14 +23,110 @@ servers:
   - url: https://virtserver.swaggerhub.com/HMCTS-DTS/api-cp-crime-caseadmin-case-document-knowledge/0.0.0
 
 tags:
+  - name: Query Catalogue
+    description: Manage canonical queries metadata (stable labels).
   - name: Queries
-    description: Manage and read versioned queries (user text + prompt + status), filtered by Case, with as-of semantics.
+    description: Manage and read versioned query definitions and per-case status (as-of semantics).
   - name: Answers
     description: Read versioned AI answers for queries (latest, as-of, or by version), optionally including the LLM input for integration.
   - name: Ingestion
     description: Document ingestion progress for a Case (blob upload → knowledge ingested).
 
 paths:
+  # ---------------------------
+  # Query Catalogue (stable canonical metadata)
+  # ---------------------------
+  /query-catalogue:
+    get:
+      tags: [Query Catalogue]
+      summary: List canonical queries (id + label)
+      operationId: listQueryCatalogue
+      responses:
+        '200':
+          description: Canonical queries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/QueryCatalogueItem'
+              examples:
+                example:
+                  value:
+                    items:
+                      - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
+                        label: "Case Summary (All Witnesses)"
+                      - queryId: "5b2a0aa4-7e16-4a62-8d7a-3d1c3c1b9f22"
+                        label: "Defendant Position"
+
+  /query-catalogue/{queryId}:
+    parameters:
+      - name: queryId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Query Catalogue]
+      summary: Get a canonical query (id + label)
+      operationId: getQueryCatalogueItem
+      responses:
+        '200':
+          description: Canonical query
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QueryCatalogueItem' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /query-catalogue/{queryId}/label:
+    parameters:
+      - name: queryId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [Query Catalogue]
+      summary: Set or update the canonical label for a query (idempotent)
+      operationId: setQueryCatalogueLabel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LabelUpdateRequest' }
+            examples:
+              example:
+                value: { label: "Case Summary (All Witnesses)" }
+      responses:
+        '200':
+          description: Updated canonical label
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QueryCatalogueItem' }
+        '400':
+          description: Invalid label
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: QueryId not found (if the canonical set is fixed)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: Label conflict (if uniqueness enforced)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  # ---------------------------
+  # Versioned queries
+  # ---------------------------
   /queries:
     get:
       tags: [Queries]
@@ -86,14 +182,13 @@ paths:
 
     post:
       tags: [Queries]
-      summary: Upsert versioned **query definitions** (no status) effective at a timestamp
+      summary: Upsert versioned **query definitions** (no status, no label) effective at a timestamp
       description: |
         Accepts a batch of **query definition** updates (userQuery + queryPrompt) for canonical queries.
-        This endpoint **does not** accept or change lifecycle status. Status is owned by the background
-        pipeline and exposed via GET endpoints.
+        This endpoint **does not** accept or change lifecycle status or labels. Status is owned by the background
+        pipeline and label is managed via the Query Catalogue API.
 
-        If `effectiveAt` is omitted, server time is used. Optionally provide `scope.caseId` to have
-        the response echo the **as-of** view for that case at the same instant (including per-case status).
+        If `effectiveAt` is omitted, server time is used.
       operationId: upsertQueries
       requestBody:
         required: true
@@ -104,18 +199,16 @@ paths:
               example:
                 value:
                   effectiveAt: "2025-05-01T12:00:00Z"
-                  scope:
-                    caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
                   queries:
                     - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
                       userQuery: "Summarise the case based on all witness statements."
                       queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
       responses:
         '202':
-          description: Accepted and stored (echoes the as-of view at `effectiveAt` if a caseId was supplied)
+          description: Accepted and stored (echoes the **definition snapshot** at `effectiveAt` — no per-case status)
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/QueryStatusResponse' }
+              schema: { $ref: '#/components/schemas/QueryDefinitionsResponse' }
         '400':
           description: Invalid request
           content:
@@ -183,6 +276,9 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
+  # ---------------------------
+  # Answers
+  # ---------------------------
   /answers/{queryId}:
     parameters:
       - name: queryId
@@ -245,6 +341,9 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
+  # ---------------------------
+  # Ingestion status
+  # ---------------------------
   /ingestions/status:
     get:
       tags: [Ingestion]
@@ -270,10 +369,33 @@ paths:
 
 components:
   schemas:
+    # ---- Query Catalogue ----
+    QueryCatalogueItem:
+      type: object
+      required: [queryId, label]
+      properties:
+        queryId:
+          type: string
+          format: uuid
+        label:
+          type: string
+          description: Stable display label for this canonical query (does not change across versions).
+          example: "Case Summary (All Witnesses)"
+
+    LabelUpdateRequest:
+      type: object
+      required: [label]
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Stable display label to set for this canonical query.
+
     # ---- Common ----
     Scope:
       type: object
-      description: Case association for a query batch or response payload.
+      description: Case association for a query response payload.
       properties:
         caseId:
           type: string
@@ -285,7 +407,7 @@ components:
     QueryLifecycleStatus:
       type: string
       description: Per-query lifecycle state for this case.
-      enum: [UPLOADED, INGESTED, ANSWERS_AVAILABLE]
+      enum: [ANSWER_NOT_AVAILABLE, ANSWER_AVAILABLE]
 
     QuerySummary:
       type: object
@@ -300,7 +422,7 @@ components:
           nullable: true
         label:
           type: string
-          description: Stable display label for this canonical query (does not change across versions).
+          description: Stable display label for this canonical query.
           example: "Case Summary (All Witnesses)"
         userQuery:
           type: string
@@ -342,8 +464,6 @@ components:
           type: string
           format: date-time
           description: Effective timestamp for this upsert batch (default is server time).
-        scope:
-          $ref: '#/components/schemas/Scope'
         queries:
           type: array
           minItems: 1
@@ -375,6 +495,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QuerySummary'
+
+    QueryDefinitionsResponse:
+      type: object
+      required: [asOf, queries]
+      properties:
+        asOf:
+          type: string
+          format: date-time
+          description: The effective timestamp for the returned definition snapshot.
+        queries:
+          type: array
+          description: Definition snapshot (no per-case status).
+          items:
+            $ref: '#/components/schemas/QueryVersionSummary'
 
     # ---- Answers ----
     AnswerResponse:

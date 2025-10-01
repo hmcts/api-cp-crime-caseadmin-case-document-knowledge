@@ -71,7 +71,7 @@ class GeneratedModelContractsExistTest {
                 .map(Object::toString)
                 .toList();
 
-        assertTrue(names.containsAll(List.of("UPLOADED", "INGESTED", "ANSWERS_AVAILABLE")),
+        assertTrue(names.containsAll(List.of("ANSWER_NOT_AVAILABLE", "ANSWER_AVAILABLE")),
                 "QueryLifecycleStatus must contain UPLOADED, INGESTED, ANSWERS_AVAILABLE. Was: " + names);
     }
 

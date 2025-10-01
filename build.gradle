@@ -158,8 +158,8 @@ openApiGenerate {
     generatorName = "spring"
     inputSpec = inputSpecFile.absolutePath
     outputDir = "${layout.buildDirectory.get().asFile.absolutePath}/generated"
-    apiPackage = "uk.gov.hmcts.cp.openapi.api"
-    modelPackage = "uk.gov.hmcts.cp.openapi.model"
+    apiPackage = "uk.gov.hmcts.cp.openapi.api.cdk"
+    modelPackage = "uk.gov.hmcts.cp.openapi.model.cdk"
     generateModelTests = true
     generateApiTests = true
     cleanupOutput = true

@@ -26,12 +26,28 @@ class GeneratedApiContractsExistTest {
         Info info = openAPI.getInfo();
         assertNotNull(info);
         assertEquals("Case Documents AI Responses API", info.getTitle());
-        assertEquals("API description", info.getDescription());
+
+        String desc = info.getDescription();
+        assertNotNull(desc, "Info.description must be set");
+        String lower = desc.toLowerCase();
+
+        boolean hasVersioned = lower.contains("versioned");
+        boolean hasAsOf = lower.contains("as-of");
+        boolean hasQueries = lower.contains("queries") || lower.contains("query");
+        boolean hasAnswers = lower.contains("answers") || lower.contains("answer");
+        boolean mentionsIngestion = lower.contains("ingest");
+        boolean mentionsCase = lower.contains("case");
+
+        assertTrue(hasVersioned, "Description should mention versioned resources");
+        assertTrue(hasAsOf, "Description should mention as-of views");
+        assertTrue(hasQueries, "Description should mention queries");
+        assertTrue(hasAnswers, "Description should mention answers");
+        assertTrue(mentionsIngestion, "Description should mention ingestion");
+        assertTrue(mentionsCase, "Description should mention Case context");
 
         String apiGitHubRepository = "api-cp-crime-caseadmin-case-document-knowledge";
         String expectedVersion = System.getProperty("API_SPEC_VERSION", "0.0.0");
         log.info("API version set to: {}", expectedVersion);
-
         assertEquals(expectedVersion, info.getVersion());
 
         License license = info.getLicense();
@@ -51,7 +67,7 @@ class GeneratedApiContractsExistTest {
     }
 
     @Test
-    void answerResponse_should_require_userQuery() {
+    void answerResponse_schema_should_require_userQuery_and_createdAt() {
         OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
         Schema<?> answer = openAPI.getComponents().getSchemas().get("AnswerResponse");
         assertNotNull(answer, "AnswerResponse schema missing");
@@ -59,9 +75,16 @@ class GeneratedApiContractsExistTest {
         Map<String, Schema> props = answer.getProperties();
         assertNotNull(props, "AnswerResponse properties missing");
         assertTrue(props.containsKey("userQuery"), "AnswerResponse must contain userQuery");
+        assertTrue(props.containsKey("createdAt"), "AnswerResponse must contain createdAt");
+
+        Schema<?> createdAt = props.get("createdAt");
+        assertNotNull(createdAt, "createdAt schema missing");
+        assertEquals("string", createdAt.getType(), "createdAt must be a string");
+        assertEquals("date-time", createdAt.getFormat(), "createdAt must have format=date-time");
 
         assertNotNull(answer.getRequired(), "AnswerResponse.required missing");
         assertTrue(answer.getRequired().contains("userQuery"), "userQuery must be required");
+        assertTrue(answer.getRequired().contains("createdAt"), "createdAt must be required");
     }
 
     @Test

@@ -18,14 +18,10 @@ info:
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
+
 servers:
   - url: https://virtserver.swaggerhub.com/HMCTS-DTS/api-cp-crime-caseadmin-case-document-knowledge/0.0.0
-    description: Mock server
-  - url: https://{host}/case-docs
-    description: Production
-    variables:
-      host:
-        default: api.justice.gov.uk
+
 
 tags:
   - name: Queries

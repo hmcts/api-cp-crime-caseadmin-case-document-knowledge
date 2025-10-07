@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      attestations: write
+      contents: read
     outputs:
       upload_artifact_name: ${{ steps.update_spec.outputs.upload_artifact_name }}
     steps:

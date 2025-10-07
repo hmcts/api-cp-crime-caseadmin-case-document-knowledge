@@ -8,10 +8,6 @@ info:
     - The latest snapshot for a Case
     - An **as-of** view at a timestamp for reproducibility
     - A specific **version** of an answer
-
-    Pipeline (context): IDPC documents are associated to a **Case ID**, uploaded to Azure Blob
-    Storage by a background Spring service, ingested, and then predefined queries/prompts are
-    executed by the LLM with results stored in the DB.
   version: 0.0.0
   contact:
     email: no-reply@hmcts.com
@@ -281,7 +277,7 @@ paths:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   # ---------------------------
-  # Answers (UPDATED)
+  # Answers
   # ---------------------------
   /answers/{caseId}/{queryId}:
     parameters:
@@ -611,6 +607,3 @@ components:
           type: string
           format: date-time
           description: UTC timestamp when the error was created.
-        traceId:
-          type: string
-          description: Distributed trace id (from the current span) to help correlate logs/traces.

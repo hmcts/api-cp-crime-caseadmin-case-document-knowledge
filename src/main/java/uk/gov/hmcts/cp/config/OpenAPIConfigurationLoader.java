@@ -35,9 +35,9 @@ public final class OpenAPIConfigurationLoader {
                 throw new IllegalArgumentException("OpenAPI specification is empty: " + path);
             }
 
-            SwaggerParseResult result = new OpenAPIV3Parser().readContents(yaml, null, null);
+            final SwaggerParseResult result = new OpenAPIV3Parser().readContents(yaml, null, null);
             if (result == null || result.getOpenAPI() == null) {
-                String messages = (result != null && result.getMessages() != null)
+                final String messages = (result != null && result.getMessages() != null)
                         ? String.join("; ", result.getMessages())
                         : "Unknown parser error";
                 log.error("Failed to parse OpenAPI spec at {}: {}", path, messages);

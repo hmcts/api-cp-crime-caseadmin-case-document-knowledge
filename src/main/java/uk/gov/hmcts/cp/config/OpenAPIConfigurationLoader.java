@@ -3,17 +3,15 @@ package uk.gov.hmcts.cp.config;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
+@Slf4j
 public final class OpenAPIConfigurationLoader {
-
-    private static final Logger LOG = LoggerFactory.getLogger(OpenAPIConfigurationLoader.class);
 
     // Match your Gradle include("*.openapi.yml")
     private static final String SPEC_PATH = "openapi/case-admin-doc-knowledge-api.openapi.yml";
@@ -28,7 +26,7 @@ public final class OpenAPIConfigurationLoader {
                      Thread.currentThread().getContextClassLoader().getResourceAsStream(path)) {
 
             if (inputStream == null) {
-                LOG.error("OpenAPI specification file not found on classpath: {}", path);
+                log.error("OpenAPI specification file not found on classpath: {}", path);
                 throw new IllegalArgumentException("Missing resource: " + path);
             }
 
@@ -42,7 +40,7 @@ public final class OpenAPIConfigurationLoader {
                 String messages = (result != null && result.getMessages() != null)
                         ? String.join("; ", result.getMessages())
                         : "Unknown parser error";
-                LOG.error("Failed to parse OpenAPI spec at {}: {}", path, messages);
+                log.error("Failed to parse OpenAPI spec at {}: {}", path, messages);
                 throw new IllegalStateException("Failed to parse OpenAPI spec at " + path + ": " + messages);
             }
 
@@ -53,7 +51,9 @@ public final class OpenAPIConfigurationLoader {
         }
     }
 
-    /** Convenience accessor using the default SPEC_PATH. */
+    /**
+     * Convenience accessor using the default SPEC_PATH.
+     */
     public OpenAPI openAPI() {
         return loadOpenApiFromClasspath(SPEC_PATH);
     }

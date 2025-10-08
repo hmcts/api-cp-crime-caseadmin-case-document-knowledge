@@ -1,25 +1,35 @@
-package uk.gov.hmcts.cp.openapi.codegen;
+package uk.gov.hmcts.cp.openapi.model.cdk;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
-import uk.gov.hmcts.cp.openapi.model.cdk.AnswerResponse;
-import uk.gov.hmcts.cp.openapi.model.cdk.AnswerWithLlmResponse;
-import uk.gov.hmcts.cp.openapi.model.cdk.QueryStatusResponse;
-import uk.gov.hmcts.cp.openapi.model.cdk.QuerySummary;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static uk.gov.hmcts.cp.openapi.model.cdk.QueryLifecycleStatus.ANSWER_AVAILABLE;
 
-class ExamplePayloadBindingTest {
+class GeneratedObjectMappingTest {
 
     private final ObjectMapper mapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     @Test
-    void json_should_map_to_AnswerResponse_object() throws Exception {
+    void json_should_map_toErrorResponse_object() throws JsonProcessingException {
+        String json = "{\n" +
+                "    \"error\": \"BAD_REQUEST\",\n" +
+                "    \"message\": \"Bad client request\",\n" +
+                "    \"timestamp\": \"2025-01-01T11:11:11Z\"\n" +
+                "}";
+        ErrorResponse errorResponse = mapper.readValue(json, ErrorResponse.class);
+        assertThat(errorResponse.getError()).isEqualTo("BAD_REQUEST");
+        assertThat(errorResponse.getMessage()).isEqualTo("Bad client request");
+        assertThat(errorResponse.getTimestamp()).isEqualTo("2025-01-01T11:11:11Z");
+    }
+
+    @Test
+    void json_should_map_to_AnswerResponse_object() throws JsonProcessingException {
         String json = "{\n" +
                 "    \"queryId\": \"a1a6eeb3-06f5-4c33-ac48-c09d66991ca1\",\n" +
                 "    \"userQuery\": \"Summary of case based on witness statements\",\n" +
@@ -37,7 +47,7 @@ class ExamplePayloadBindingTest {
     }
 
     @Test
-    void json_should_map_to_AnswerWithLimResponse_object() throws Exception {
+    void json_should_map_to_AnswerWithLimResponse_object() throws JsonProcessingException {
         String json = "{\n" +
                 "    \"queryId\": \"a1a6eeb3-06f5-4c33-ac48-c09d66991ca1\",\n" +
                 "    \"userQuery\": \"Summary of case based on witness statements\",\n" +
@@ -57,7 +67,7 @@ class ExamplePayloadBindingTest {
     }
 
     @Test
-    void json_should_map_to_QueryStatusResponse_object() throws Exception {
+    void json_should_map_to_QueryStatusResponse_object() throws JsonProcessingException {
         String json = "{\n" +
                 "    \"asOf\": \"2025-05-01T12:00:00Z\",\n" +
                 "    \"queries\": [\n" +

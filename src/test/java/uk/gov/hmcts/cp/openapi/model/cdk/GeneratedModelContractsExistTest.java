@@ -1,4 +1,4 @@
-package uk.gov.hmcts.cp.openapi.codegen;
+package uk.gov.hmcts.cp.openapi.model.cdk;
 
 import org.junit.jupiter.api.Test;
 

@@ -176,7 +176,7 @@ paths:
         '400':
           description: Missing or invalid filters
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.queries+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
     post:

@@ -42,7 +42,7 @@ paths:
         '200':
           description: Canonical queries
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.query-catalogue+json:
               schema:
                 type: object
                 properties:
@@ -74,12 +74,12 @@ paths:
         '200':
           description: Canonical query
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.query-catalogue+json:
               schema: { $ref: '#/components/schemas/QueryCatalogueItem' }
         '404':
           description: Not found
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.query-catalogue+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   /query-catalogue/{queryId}/label:
@@ -96,7 +96,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          application/vnd.casedocumentknowledge-service.query-catalogue+json:
             schema: { $ref: '#/components/schemas/LabelUpdateRequest' }
             examples:
               example:
@@ -105,22 +105,22 @@ paths:
         '200':
           description: Updated canonical label
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.query-catalogue+json:
               schema: { $ref: '#/components/schemas/QueryCatalogueItem' }
         '400':
           description: Invalid label
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.query-catalogue+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
         '404':
           description: QueryId not found (if the canonical set is fixed)
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.query-catalogue+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
         '409':
           description: Label conflict (if uniqueness enforced)
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.query-catalogue+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   # ---------------------------
@@ -149,30 +149,6 @@ paths:
         '200':
           description: Queries as of the requested time
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/QueryStatusResponse'
-              examples:
-                example:
-                  value:
-                    asOf: "2025-05-01T12:00:00Z"
-                    scope:
-                      caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
-                    queries:
-                      - queryId: "1c9d3a9a-1f1b-4a2a-9d7c-3f6b4b9d1f10"
-                        caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
-                        label: "Case Summary (All Witnesses)"
-                        userQuery: "Summarise the case based on all witness statements."
-                        queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
-                        status: ANSWERS_AVAILABLE
-                        effectiveAt: "2025-05-01T11:59:00Z"
-                      - queryId: "5b2a0aa4-7e16-4a62-8d7a-3d1c3c1b9f22"
-                        caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
-                        label: "Defendant Position"
-                        userQuery: "Summarise the defendant's position based on witness statements."
-                        queryPrompt: "Provide the defendant summary using the supplied witness statements."
-                        status: INGESTED
-                        effectiveAt: "2025-05-01T11:58:00Z"
             application/vnd.casedocumentknowledge-service.queries+json:
               schema:
                 $ref: '#/components/schemas/QueryStatusResponse'
@@ -188,7 +164,7 @@ paths:
                         label: "Case Summary (All Witnesses)"
                         userQuery: "Summarise the case based on all witness statements."
                         queryPrompt: "Summarise the case using all witness statements. Focus on timeline and key claims."
-                        status: ANSWERS_AVAILABLE
+                        status: ANSWER_AVAILABLE
                         effectiveAt: "2025-05-01T11:59:00Z"
                       - queryId: "5b2a0aa4-7e16-4a62-8d7a-3d1c3c1b9f22"
                         caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
@@ -216,7 +192,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          application/vnd.casedocumentknowledge-service.queries+json:
             schema: { $ref: '#/components/schemas/QueryUpsertRequest' }
             examples:
               example:
@@ -230,12 +206,12 @@ paths:
         '202':
           description: Accepted and stored; returns the **definition snapshot** at `effectiveAt` (no per-case status).
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.queries+json:
               schema: { $ref: '#/components/schemas/QueryDefinitionsResponse' }
         '400':
           description: Invalid request
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.queries+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   /queries/{queryId}:
@@ -263,12 +239,12 @@ paths:
         '200':
           description: Query as-of the requested time
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.queries+json:
               schema: { $ref: '#/components/schemas/QuerySummary' }
         '404':
           description: Query not found
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.queries+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   /queries/{queryId}/versions:
@@ -286,7 +262,7 @@ paths:
         '200':
           description: Definition versions ordered by effectiveAt ascending
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.queries+json:
               schema:
                 type: object
                 properties:
@@ -297,7 +273,7 @@ paths:
         '404':
           description: Not found
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.queries+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   # ---------------------------
@@ -332,16 +308,6 @@ paths:
         '200':
           description: Answer for the query
           content:
-            application/json:
-              schema: { $ref: '#/components/schemas/AnswerResponse' }
-              examples:
-                example:
-                  value:
-                    queryId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-                    userQuery: "Summarise the case."
-                    answer: "..."
-                    version: 1
-                    createdAt: "2025-01-01T11:11:11Z"
             application/vnd.casedocumentknowledge-service.answers+json:
               schema: { $ref: '#/components/schemas/AnswerResponse' }
               examples:
@@ -355,7 +321,7 @@ paths:
         '404':
           description: Query/version not found
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.answers+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   /answers/{caseId}/{queryId}/with-llm:
@@ -385,7 +351,7 @@ paths:
         '200':
           description: Answer and LLM input
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.answers+json:
               schema: { $ref: '#/components/schemas/AnswerWithLlmResponse' }
               examples:
                 example:
@@ -399,7 +365,7 @@ paths:
         '404':
           description: Query/version not found
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.answers+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   # ---------------------------
@@ -420,61 +386,50 @@ paths:
         '200':
           description: Ingestion status
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.ingestion+json:
               schema: { $ref: '#/components/schemas/IngestionStatusResponse' }
         '400':
           description: Missing filters
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.ingestion+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
   # ---------------------------
-  # Background Processing
+  # Ingestion Background Processing
   # ---------------------------
-  /backend-process/{courtCentreId}/{roomId}/{date}:
-    parameters:
-      - name: courtCentreId
-        in: path
-        required: true
-        schema: { type: string, format: uuid }
-      - name: roomId
-        in: path
-        required: true
-        schema: { type: string, format: uuid }
-      - name: date
-        in: path
-        required: true
-        schema: { type: string, format: date }
-        description: date for which allocated hearings needs to be processed in backend
-
-    get:
-      tags: [ Backend Process ]
+  /ingestion-process:
+    post:
+      tags: [ Ingestion ]
       summary: Start backend process for the allocated hearings based on specific courtCentreId,roomId and date
       description: Returns the response by starting backend ingestion process silently
-      operationId: getBackendProcessStarted
+      operationId: startIngestionProcess
+      requestBody:
+        required: true
+        content:
+          application/vnd.casedocumentknowledge-service.ingestion-process+json:
+            schema: { $ref: '#/components/schemas/IngestionProcessRequest' }
+            examples:
+              example:
+                value:
+                  courtCentreId: "f8254db1-1683-483e-afb3-b87fde5a0a26"
+                  roomId: "9e4932f7-97b2-3010-b942-ddd2624e4dd8"
+                  date: "2025-10-23"
+                  effectiveAt: "2025-05-01T12:00:00Z"
       responses:
         '200':
-          description: Get backend process started
+          description: ingestion process started
           content:
-            application/json:
-              schema: { $ref: '#/components/schemas/BackendProcessResponse' }
+            application/vnd.casedocumentknowledge-service.ingestion-process+json:
+              schema: { $ref: '#/components/schemas/IngestionProcessResponse' }
               examples:
                 example:
                   value:
-                    courtCentreId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-                    roomId: "7dgf67g4-0b8a-43b9-b35d-6489e6dbh678"
-                    date: "2025-01-01"
-            application/vnd.casedocumentknowledge-service.backend-process+json:
-              schema: { $ref: '#/components/schemas/BackendProcessResponse' }
-              examples:
-                example:
-                  value:
-                    courtCentreId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-                    roomId: "7dgf67g4-0b8a-43b9-b35d-6489e6dbh678"
-                    date: "2025-01-01"
+                    phase: "STARTED"
+                    lastUpdated: "2025-01-02T10:00:00Z"
+                    message: "Ingestion process started"
         '404':
-          description: backend-process not found
+          description: ingestion process not found
           content:
-            application/json:
+            application/vnd.casedocumentknowledge-service.ingestion-process+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
 components:
@@ -653,6 +608,27 @@ components:
               type: string
               description: LLM prompt/input captured for diagnostics.
 
+    IngestionProcessRequest:
+      type: object
+      required: [ courtCentreId, roomId, date ]
+      properties:
+        courtCentreId:
+          type: string
+          format: uuid
+          description: courtCentreId.
+        roomId:
+          type: string
+          format: uuid
+          description: roomId.
+        date:
+          type: string
+          format: date
+          description: date for which allocated case hearings needs to be processed in backend.
+        effectiveAt:
+          type: string
+          format: date-time
+          description: Version effective timestamp.
+
     # ---- Ingestion ----
     DocumentIngestionPhase:
       type: string
@@ -660,7 +636,7 @@ components:
       enum: [NOT_FOUND, UPLOADING, UPLOADED, INGESTING, INGESTED, FAILED]
 
     # ---- backend process ----
-    BackendProcessResponse:
+    IngestionProcessPhase:
       type: string
       description: Backend process response.
       enum: [ STARTED, FAILED ]
@@ -675,6 +651,19 @@ components:
         lastUpdated:
           type: string
           format: date-time
+        message:
+          type: string
+          nullable: true
+
+    IngestionProcessResponse:
+      type: object
+      properties:
+        phase:
+          $ref: '#/components/schemas/IngestionProcessPhase'
+        lastUpdated:
+          type: string
+          format: date-time
+          nullable: true
         message:
           type: string
           nullable: true

@@ -27,8 +27,6 @@ tags:
     description: Read versioned AI answers for queries (latest, as-of, or by version), optionally including the LLM input for integration.
   - name: Ingestion
     description: Document ingestion progress for a Case (blob upload → knowledge ingested).
-  - name: Ingestion Process
-    description: Document ingestion process in background through workflow.
 
 paths:
   # ---------------------------
@@ -398,9 +396,9 @@ paths:
   # ---------------------------
   # Ingestion Background Processing
   # ---------------------------
-  /ingestion-process:
+  /ingestions/start:
     post:
-      tags: [ Ingestion Process ]
+      tags: [Ingestion]
       summary: Start backend process for the allocated hearings based on specific courtCentreId,roomId and date
       description: Returns the response by starting backend ingestion process silently
       operationId: startIngestionProcess

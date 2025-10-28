@@ -5,7 +5,7 @@ plugins {
     id 'jacoco'
     id 'maven-publish'
     id 'com.github.ben-manes.versions' version '0.53.0'
-    id 'org.cyclonedx.bom' version '2.4.1'
+    id 'org.cyclonedx.bom' version '3.0.1'
     id 'pmd'
 }
 
@@ -232,7 +232,7 @@ tasks.named("pmdTest").configure { enabled = false }
 // ---- Versions / libs ----
 ext {
     // NOTE: prefer a stable Spring Boot 3.3.x+ for Java 21; adjust as needed.
-    springBootVersion = "4.0.0-M3"
+    springBootVersion = "4.0.0-RC1"
     lombokVersion     = "1.18.42"
 }
 
@@ -244,13 +244,13 @@ dependencies {
     // Generated interfaces will use Spring + Bean Validation annotations
     implementation "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
     implementation "org.springframework.boot:spring-boot-starter-validation:$springBootVersion"
-    implementation "io.swagger.parser.v3:swagger-parser:2.1.34"
-    implementation "io.swagger.core.v3:swagger-models:2.2.38"
+    implementation "io.swagger.parser.v3:swagger-parser:2.1.35"
+    implementation "io.swagger.core.v3:swagger-models:2.2.39"
     // Swagger annotations (compileOnly so you don't leak them transitively)
-    compileOnly 'io.swagger.core.v3:swagger-annotations:2.2.38'
+    compileOnly 'io.swagger.core.v3:swagger-annotations:2.2.39'
 
     // Logging util
-    implementation 'net.logstash.logback:logstash-logback-encoder:8.1'
+    implementation 'net.logstash.logback:logstash-logback-encoder:9.0'
 
     // Jackson annotations (used by generated models)
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.20'
@@ -262,7 +262,7 @@ dependencies {
     testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
 
     // Testing
-    testImplementation("org.assertj:assertj-core:3.6.1")
+    testImplementation("org.assertj:assertj-core:3.27.6")
     testImplementation platform('org.junit:junit-bom:6.0.0')
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'

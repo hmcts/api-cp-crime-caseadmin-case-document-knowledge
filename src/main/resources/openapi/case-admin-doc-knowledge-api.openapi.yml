@@ -461,6 +461,7 @@ components:
     Scope:
       type: object
       description: Case association for a query response payload.
+      required: [caseId]
       properties:
         caseId:
           type: string

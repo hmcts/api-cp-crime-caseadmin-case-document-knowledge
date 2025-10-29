@@ -461,12 +461,17 @@ components:
     Scope:
       type: object
       description: Case association for a query response payload.
+      required: [caseId]
       properties:
         caseId:
           type: string
           format: uuid
+        isIdpcAvailable:
+          type: boolean
+          description: True if IDPC is available, false otherwise
       example:
         caseId: "7b1c6a7b-07e3-42f9-9e3b-3f4e17f73a20"
+        isIdpcAvailable: false
 
     # ---- Queries ----
     QueryLifecycleStatus:

@@ -285,8 +285,7 @@ paths:
           type: string
           format: uuid
     get:
-      tags:
-        - [Queries]
+      tags: [Queries]
       summary: Download material by document ID
       description: >
         Returns a pre-signed URL that can be used to download the specified material.

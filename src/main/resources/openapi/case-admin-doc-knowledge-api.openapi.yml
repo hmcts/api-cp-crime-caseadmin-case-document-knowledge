@@ -276,6 +276,43 @@ paths:
             application/vnd.casedocumentknowledge-service.queries+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
+  /queries/{docId}/content:
+    parameters:
+      - name: docId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - [Queries]
+      summary: Download material by document ID
+      description: >
+        Returns a pre-signed URL that can be used to download the specified material.
+        The URL will be time-limited and point to the blob storage location.
+      operationId: getMaterialContentUrl
+      responses:
+        '200':
+          description: Download URL successfully generated
+          content:
+            application/vnd.casedocumentknowledge-service.queries-material-content+json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                    description: Pre-signed URL to download the material.
+                example:
+                  url: "https://sasitlargefiles.blob.core.windows.net/largefiles-blob-container/20251030-111324-d48YWrXtJR-d2d37964-8139-4713-97d2-62dd2d1419f4/Pervert%20the%20course%20of%20justice.pdf?sig=bifIjPnC5eM14vtw23YMMMkdkBFI%2FRHQetnwrNG%2FS5k%3D&st=2025-10-30T10%3A58%3A25Z&se=2025-10-30T11%3A43%3A25Z&sv=2019-02-02&si=DownloadPolicy&sr=b"
+        '404':
+          description: Material not found
+          content:
+            application/vnd.casedocumentknowledge-service.queries-material-content+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   # ---------------------------
   # Answers
   # ---------------------------

@@ -27,6 +27,8 @@ tags:
     description: Read versioned AI answers for queries (latest, as-of, or by version), optionally including the LLM input for integration.
   - name: Ingestion
     description: Document ingestion progress for a Case (blob upload → knowledge ingested).
+  - name: Document
+    description: Provide document url based on document Id.
 
 paths:
   # ---------------------------
@@ -276,14 +278,14 @@ paths:
             application/vnd.casedocumentknowledge-service.queries+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
-  /queries/{docId}/content:
+  /document/{documentId}/content:
     get:
-      tags: [Queries]
+      tags: [Document]
       summary: Download material by document ID
       description: Returns a pre-signed URL that can be used to download the specified material.The URL will be time-limited and point to the blob storage location.
       operationId: getMaterialContentUrl
       parameters:
-        - name: docId
+        - name: documentId
           in: path
           required: true
           schema: { type: string, format: uuid }
@@ -291,7 +293,7 @@ paths:
         '200':
           description: Download URL successfully generated
           content:
-            application/vnd.casedocumentknowledge-service.queries-material-content+json:
+            application/vnd.casedocumentknowledge-service.document-content+json:
               schema:
                 type: object
                 properties:
@@ -304,7 +306,7 @@ paths:
         '404':
           description: Material not found
           content:
-            application/vnd.casedocumentknowledge-service.queries-material-content+json:
+            application/vnd.casedocumentknowledge-service.document-content+json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 

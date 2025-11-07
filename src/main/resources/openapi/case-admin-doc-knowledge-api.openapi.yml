@@ -277,20 +277,16 @@ paths:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   /queries/{docId}/content:
-    parameters:
-      - name: docId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
     get:
       tags: [Queries]
       summary: Download material by document ID
-      description: >
-        Returns a pre-signed URL that can be used to download the specified material.
-        The URL will be time-limited and point to the blob storage location.
+      description: Returns a pre-signed URL that can be used to download the specified material.The URL will be time-limited and point to the blob storage location.
       operationId: getMaterialContentUrl
+      parameters:
+        - name: docId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
       responses:
         '200':
           description: Download URL successfully generated

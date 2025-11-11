@@ -480,6 +480,10 @@ components:
           type: string
           description: Stable display label for this canonical query (does not change across versions).
           example: "Case Summary (All Witnesses)"
+        order:
+          type: integer
+          minimum: 1
+          description: Display order of the query in the UI (1 = highest priority).
 
     LabelUpdateRequest:
       type: object
@@ -490,6 +494,10 @@ components:
           minLength: 1
           maxLength: 100
           description: Stable display label to set for this canonical query.
+        order:
+          type: integer
+          minimum: 1
+          description:  Display order of the query in the UI (1 = highest priority).
 
     # ---- Common ----
     Scope:

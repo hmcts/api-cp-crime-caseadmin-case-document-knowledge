@@ -343,7 +343,10 @@ paths:
           description: Answer for the query
           content:
             application/vnd.casedocumentknowledge-service.answers+json:
-              schema: { $ref: '#/components/schemas/AnswerResponse' }
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnswerResponse'
               examples:
                 example:
                   value:
@@ -469,6 +472,9 @@ paths:
 components:
   schemas:
     # ---- Query Catalogue ----
+    QueryLevel:
+      type: string
+      enum: [ CASE, DEFENDANT ]
     QueryCatalogueItem:
       type: object
       required: [queryId, label]
@@ -523,7 +529,7 @@ components:
 
     QuerySummary:
       type: object
-      required: [queryId, label, userQuery, queryPrompt, status, effectiveAt]
+      required: [queryId, label, userQuery, queryPrompt, status, effectiveAt, level]
       properties:
         queryId:
           type: string
@@ -548,10 +554,11 @@ components:
           type: string
           format: date-time
           description: Version effective timestamp for this query definition/status.
-
+        level:
+          $ref: '#/components/schemas/QueryLevel'
     QueryVersionSummary:
       type: object
-      required: [queryId, label, userQuery, queryPrompt, effectiveAt]
+      required: [queryId, label, userQuery, queryPrompt, effectiveAt, level]
       properties:
         queryId:
           type: string
@@ -567,7 +574,8 @@ components:
           type: string
           format: date-time
           description: Version effective timestamp.
-
+        level:
+          $ref: '#/components/schemas/QueryLevel'
     QueryUpsertRequest:
       type: object
       required: [queries]
@@ -581,7 +589,7 @@ components:
           minItems: 1
           items:
             type: object
-            required: [queryId, userQuery, queryPrompt]
+            required: [queryId, userQuery, queryPrompt, level]
             properties:
               queryId:
                 type: string
@@ -592,7 +600,8 @@ components:
               queryPrompt:
                 type: string
                 description: The normalized prompt for this **definition version**.
-
+              level:
+                $ref: '#/components/schemas/QueryLevel'
     QueryStatusResponse:
       type: object
       required: [asOf, queries]
@@ -644,7 +653,11 @@ components:
           type: string
           format: date-time
           example: "2025-01-01T11:11:11Z"
-
+        defendantId:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/AnswerStatus'
     AnswerWithLlmResponse:
       allOf:
         - $ref: '#/components/schemas/AnswerResponse'
@@ -653,8 +666,15 @@ components:
           properties:
             llmInput:
               type: string
+              nullable: true
               description: LLM prompt/input captured for diagnostics.
 
+    AnswerStatus:
+      type: string
+      enum:
+        - ANSWER_AVAILABLE
+        - ANSWER_NOT_AVAILABLE
+        - IDPC_NOT_FOUND
     IngestionProcessRequest:
       type: object
       required: [ courtCentreId, roomId, date ]

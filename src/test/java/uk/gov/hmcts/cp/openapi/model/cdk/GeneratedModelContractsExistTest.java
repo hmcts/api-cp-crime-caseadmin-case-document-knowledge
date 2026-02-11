@@ -142,7 +142,7 @@ class GeneratedModelContractsExistTest {
         assertTrue(enumCls.isEnum(), "QueryLevel should be an enum");
 
         var names = enumNames(enumCls);
-        assertTrue(names.containsAll(List.of("case", "defendant")),
+        assertTrue(names.containsAll(List.of("CASE", "DEFENDANT")),
                 "QueryLevel must contain case and defendant. Was: " + names);
     }
 

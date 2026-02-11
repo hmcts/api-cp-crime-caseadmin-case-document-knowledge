@@ -22,7 +22,9 @@ class GeneratedModelContractsExistTest {
                 "uk.gov.hmcts.cp.openapi.model.cdk.QueryLifecycleStatus",
                 "uk.gov.hmcts.cp.openapi.model.cdk.IngestionStatusResponse",
                 "uk.gov.hmcts.cp.openapi.model.cdk.DocumentIngestionPhase",
-                "uk.gov.hmcts.cp.openapi.model.cdk.ErrorResponse"
+                "uk.gov.hmcts.cp.openapi.model.cdk.ErrorResponse",
+                "uk.gov.hmcts.cp.openapi.model.cdk.QueryLevel",
+                "uk.gov.hmcts.cp.openapi.model.cdk.AnswerStatus"
         );
 
         for (String fqcn : models) {
@@ -88,6 +90,76 @@ class GeneratedModelContractsExistTest {
                 "DocumentIngestionPhase must contain expected states. Was: " + names);
     }
 
+
+    @Test
+    void answerWithLlmResponse_should_extend_answer_contract_with_llmInput_and_new_fields() throws Exception {
+        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.AnswerWithLlmResponse");
+        assertHasGetter(cls, "getQueryId");
+        assertHasGetter(cls, "getUserQuery");
+        assertHasGetter(cls, "getAnswer");
+        assertHasGetter(cls, "getCreatedAt");
+        assertHasGetter(cls, "getVersion");
+        assertHasGetter(cls, "getLlmInput");
+
+        // inherited/new optional fields
+        assertHasGetter(cls, "getDefendantId");
+        assertHasGetter(cls, "getStatus");
+    }
+
+    @Test
+    void querySummary_should_have_expected_accessors_including_level() throws Exception {
+        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.QuerySummary");
+        assertHasGetter(cls, "getQueryId");
+        assertHasGetter(cls, "getUserQuery");
+        assertHasGetter(cls, "getQueryPrompt");
+        assertHasGetter(cls, "getStatus");
+        assertHasGetter(cls, "getEffectiveAt");
+        assertHasGetter(cls, "getCaseId");
+        assertHasGetter(cls, "getLevel");
+    }
+
+    @Test
+    void queryUpsertRequest_query_item_should_have_level() throws Exception {
+        // openapi-generator usually emits this for inline array item schema
+        Class<?> inner = classOrNull("uk.gov.hmcts.cp.openapi.model.cdk.QueryUpsertRequestQueriesInner");
+
+        // fallback if generator naming differs
+        if (inner == null) {
+            inner = classOrNull("uk.gov.hmcts.cp.openapi.model.cdk.QueryUpsertRequestQueries");
+        }
+
+        assertNotNull(inner, "Missing generated inner query item model for QueryUpsertRequest");
+        assertHasGetter(inner, "getQueryId");
+        assertHasGetter(inner, "getUserQuery");
+        assertHasGetter(inner, "getQueryPrompt");
+        assertHasGetter(inner, "getLevel");
+    }
+
+
+    @Test
+    void queryLevel_enum_has_expected_values() throws Exception {
+        Class<?> enumCls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.QueryLevel");
+        assertTrue(enumCls.isEnum(), "QueryLevel should be an enum");
+
+        var names = enumNames(enumCls);
+        assertTrue(names.containsAll(List.of("CASE", "DEFENDANT")),
+                "QueryLevel must contain case and defendant. Was: " + names);
+    }
+
+    @Test
+    void answerStatus_enum_has_expected_values() throws Exception {
+        Class<?> enumCls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.AnswerStatus");
+        assertTrue(enumCls.isEnum(), "AnswerStatus should be an enum");
+
+        var names = enumNames(enumCls);
+        assertTrue(names.contains("ANSWER_AVAILABLE"),
+                "AnswerStatus must contain ANSWER_AVAILABLE. Was: " + names);
+        assertTrue(names.contains("ANSWER_NOT_AVAILABLE"),
+                "AnswerStatus must contain ANSWER_NOT_AVAILABLE. Was: " + names);
+        assertTrue(names.contains("IDPC_NOT_FOUND"),
+                "AnswerStatus must contain IDPC_NOT_FOUND. Was: " + names);
+    }
+
     // ---------- helpers ----------
 
     private static boolean classExists(String fqcn) {
@@ -104,5 +176,20 @@ class GeneratedModelContractsExistTest {
                 .map(Method::getName)
                 .anyMatch(methodName::equals);
         assertTrue(found, () -> "Expected getter '" + methodName + "' on " + type.getName());
+    }
+
+    private static Class<?> classOrNull(String fqcn) {
+        try {
+            return Class.forName(fqcn);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+    }
+
+
+    private static List<String> enumNames(Class<?> enumClass) {
+        return Arrays.stream(enumClass.getEnumConstants())
+                .map(Object::toString)
+                .toList();
     }
 }

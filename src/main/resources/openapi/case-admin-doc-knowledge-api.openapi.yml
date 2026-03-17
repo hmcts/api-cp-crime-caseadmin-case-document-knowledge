@@ -523,7 +523,7 @@ components:
     # ---- Query Catalogue ----
     QueryLevel:
       type: string
-      enum: [ CASE, DEFENDANT ]
+      enum: [ CASE, DEFENDANT, CASE_ALL_DOCUMENTS ]
     QueryCatalogueItem:
       type: object
       required: [queryId, label]

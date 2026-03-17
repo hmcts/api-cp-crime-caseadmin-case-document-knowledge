@@ -638,7 +638,7 @@ components:
           minItems: 1
           items:
             type: object
-            required: [queryId, userQuery, queryPrompt, level]
+            required: [queryId, userQuery, queryPrompt]
             properties:
               queryId:
                 type: string

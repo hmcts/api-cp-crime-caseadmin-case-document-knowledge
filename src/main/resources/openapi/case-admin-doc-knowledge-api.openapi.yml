@@ -539,6 +539,10 @@ components:
           type: integer
           minimum: 1
           description: Display order of the query in the UI (1 = highest priority).
+        isActive:
+          type: boolean
+          default: true
+          description: Indicates whether this query is active and should be shown in the UI.
 
     LabelUpdateRequest:
       type: object
@@ -553,6 +557,10 @@ components:
           type: integer
           minimum: 1
           description:  Display order of the query in the UI (1 = highest priority).
+        isActive:
+          type: boolean
+          default: true
+          description: Indicates whether this query is active and should be shown in the UI.
 
     # ---- Common ----
     Scope:

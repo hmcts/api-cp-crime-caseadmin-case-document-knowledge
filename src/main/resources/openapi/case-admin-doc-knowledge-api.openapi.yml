@@ -16,7 +16,12 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: https://virtserver.swaggerhub.com/HMCTS-DTS/api-cp-crime-caseadmin-case-document-knowledge/0.0.0
+  - description: Case Documents AI Responses API
+    url: https://api-cp-crime-caseadmin-case-document-knowledge.net/{version}
+    variables:
+      version:
+        default: "0.0.0"
+        description: API version; matches the spec info.version
 
 tags:
   - name: Query Catalogue

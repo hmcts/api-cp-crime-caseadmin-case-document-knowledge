@@ -19,7 +19,7 @@ class GeneratedApiContractsExistTest {
 
         String thisRepository = "api-cp-crime-caseadmin-case-document-knowledge";
         String expectedVersion = System.getProperty("API_SPEC_VERSION", "0.0.0");
-        String expectedUrl = String.format("https://virtserver.swaggerhub.com/HMCTS-DTS/%s/%s", thisRepository, expectedVersion);
+        String expectedUrl = String.format("https://%s.net/{version}", thisRepository);
         assertThat(openAPI.getServers().get(0).getUrl()).isEqualTo(expectedUrl);
 
         assertThat(info.getTitle()).isEqualTo("Case Documents AI Responses API");

@@ -34,6 +34,8 @@ tags:
     description: Document ingestion progress for a Case (blob upload → knowledge ingested).
   - name: Document
     description: Provide document url based on document Id.
+  - name: Discovery Scheduler
+    description: Manage discovery scheduler configurations for court centres and rooms.
 
 paths:
   # ---------------------------
@@ -485,6 +487,53 @@ paths:
             application/vnd.casedocumentknowledge-service.ingestion+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
   # ---------------------------
+  # Discovery Scheduler
+  # ---------------------------
+  /discovery-scheduler/configurations:
+    post:
+      tags: [Discovery Scheduler]
+      summary: Create a discovery scheduler configuration for a court centre and room
+      description: Creates a new scheduler configuration that defines when discovery should run for a given court centre, room, and uploaded date.
+      operationId: createDiscoverySchedulerConfiguration
+      requestBody:
+        required: true
+        content:
+          application/vnd.casedocumentknowledge-service.discovery-scheduler-configurations+json:
+            schema: { $ref: '#/components/schemas/DiscoverySchedulerConfigurationRequest' }
+            examples:
+              example:
+                value:
+                  courtCentreId: "f8254db1-1683-483e-afb3-b87fde5a0a26"
+                  courtRoomId: "9e4932f7-97b2-3010-b942-ddd2624e4dd8"
+                  uploadedDate: "2026-06-16"
+                  version: 1
+                  isActive: true
+      responses:
+        '201':
+          description: Discovery scheduler configuration created
+          content:
+            application/vnd.casedocumentknowledge-service.discovery-scheduler-configurations+json:
+              schema: { $ref: '#/components/schemas/DiscoverySchedulerConfigurationResponse' }
+              examples:
+                example:
+                  value:
+                    courtCentreId: "f8254db1-1683-483e-afb3-b87fde5a0a26"
+                    courtRoomId: "9e4932f7-97b2-3010-b942-ddd2624e4dd8"
+                    uploadedDate: "2026-06-16"
+                    version: 1
+                    isActive: true
+        '400':
+          description: Invalid request
+          content:
+            application/vnd.casedocumentknowledge-service.discovery-scheduler-configurations+json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: Configuration already exists for this court centre, room, and date
+          content:
+            application/vnd.casedocumentknowledge-service.discovery-scheduler-configurations+json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  # ---------------------------
   # Ingestion Background Processing
   # ---------------------------
   /ingestions/start:
@@ -751,6 +800,50 @@ components:
         - ANSWER_AVAILABLE
         - ANSWER_NOT_AVAILABLE
         - IDPC_NOT_FOUND
+    # ---- Discovery Scheduler ----
+    DiscoverySchedulerConfigurationRequest:
+      type: object
+      required: [ courtCentreId, courtRoomId, uploadedDate, version, isActive ]
+      properties:
+        courtCentreId:
+          type: string
+          format: uuid
+          description: The court centre for which the discovery scheduler is configured.
+        courtRoomId:
+          type: string
+          format: uuid
+          description: The court room for which the discovery scheduler is configured.
+        uploadedDate:
+          type: string
+          format: date
+          description: The date on which documents were uploaded and discovery should run.
+        version:
+          type: integer
+          minimum: 1
+          description: Configuration version number.
+        isActive:
+          type: boolean
+          description: Indicates whether this scheduler configuration is active.
+
+    DiscoverySchedulerConfigurationResponse:
+      type: object
+      required: [ courtCentreId, courtRoomId, uploadedDate, version, isActive ]
+      properties:
+        courtCentreId:
+          type: string
+          format: uuid
+        courtRoomId:
+          type: string
+          format: uuid
+        uploadedDate:
+          type: string
+          format: date
+        version:
+          type: integer
+          minimum: 1
+        isActive:
+          type: boolean
+
     IngestionProcessRequest:
       type: object
       required: [ courtCentreId, roomId, date ]

@@ -316,55 +316,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   # ---------------------------
-  # Answers
-  # ---------------------------
-  /answers/{caseId}/{queryId}:
-    parameters:
-      - name: caseId
-        in: path
-        required: true
-        schema: { type: string, format: uuid }
-      - name: queryId
-        in: path
-        required: true
-        schema: { type: string, format: uuid }
-      - name: version
-        in: query
-        required: false
-        schema: { type: integer, minimum: 1 }
-        description: Return the specific answer version. Takes precedence over `at`.
-      - name: at
-        in: query
-        required: false
-        schema: { type: string, format: date-time }
-        description: Return the latest answer whose `createdAt` ≤ `at` (ignored if `version` is provided).
-    get:
-      tags: [Answers]
-      summary: Get the AI answer for a Case & query (latest, as-of, or by version)
-      description: Returns the AI-generated answer text for the given Case and queryId, by explicit version or as-of timestamp.
-      operationId: getAnswerByCaseAndQuery
-      responses:
-        '200':
-          description: Answer for the query
-          content:
-            application/vnd.casedocumentknowledge-service.answers+json:
-              schema:
-                { $ref: '#/components/schemas/AnswerResponse' }
-              examples:
-                example:
-                  value:
-                    queryId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-                    userQuery: "Summarise the case."
-                    answer: "..."
-                    version: 1
-                    createdAt: "2025-01-01T11:11:11Z"
-        '404':
-          description: Query/version not found
-          content:
-            application/vnd.casedocumentknowledge-service.answers+json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
-
-  # ---------------------------
   # Answers v2
   # ---------------------------
   /v2/cases/{caseId}/queries/{queryId}/answers:

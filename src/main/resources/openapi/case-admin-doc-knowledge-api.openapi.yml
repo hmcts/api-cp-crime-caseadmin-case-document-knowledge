@@ -482,62 +482,72 @@ paths:
   /discovery-scheduler/configurations:
     post:
       tags: [Discovery Scheduler]
-      summary: Create a versioned Discovery Scheduler configuration
+      summary: Upsert a batch of versioned Discovery Scheduler configurations
       description: |
-        Creates a new versioned configuration that records whether a **Court Centre / Court Room**
+        Accepts a batch of versioned configurations that record whether a **Court Centre / Court Room**
         combination is enabled for the nightly Discovery Scheduler process.
 
-        Each `(courtCentreId, courtRoomId, version)` triple must be unique. The nightly scheduler
-        always uses the **latest version** for each Court Centre / Court Room combination.
+        Each item is an **upsert**: if a configuration for the same `(courtCentreId, courtRoomId, version)`
+        already exists it is overwritten; otherwise a new record is created. Duplicate submissions
+        are therefore safe to retry.
 
-        Supplying `isActive: false` disables processing for that combination without deleting
-        earlier versions, preserving the full audit trail.
-      operationId: createDiscoverySchedulerConfiguration
+        The entire batch is applied **atomically** — either all items are upserted or none are persisted.
+
+        The nightly scheduler always uses the **latest version** for each Court Centre / Court Room combination.
+        A maximum of **500 configurations** may be submitted per request.
+      operationId: upsertDiscoverySchedulerConfigurations
       requestBody:
         required: true
         content:
           application/vnd.casedocumentknowledge-service.discovery-scheduler-configuration+json:
-            schema: { $ref: '#/components/schemas/DiscoverySchedulerConfigurationRequest' }
+            schema: { $ref: '#/components/schemas/DiscoverySchedulerConfigurationBatchRequest' }
             examples:
-              enabled:
-                summary: Enable a Court Centre / Court Room combination
+              single:
+                summary: Enable a single Court Centre / Court Room combination
                 value:
-                  courtCentreId: "f8254db1-1683-483e-afb3-b87fde5a0a26"
-                  courtRoomId: "9e4932f7-97b2-3010-b942-ddd2624e4dd8"
-                  uploadedDate: "2026-06-16"
-                  version: 1
-                  isActive: true
-              disabled:
-                summary: Disable a previously enabled combination (new version)
+                  configurations:
+                    - courtCentreId: "f8254db1-1683-483e-afb3-b87fde5a0a26"
+                      courtRoomId: "9e4932f7-97b2-3010-b942-ddd2624e4dd8"
+                      uploadedDate: "2026-06-16"
+                      version: 1
+                      isActive: true
+              batch:
+                summary: Load multiple configurations in one atomic request
                 value:
-                  courtCentreId: "f8254db1-1683-483e-afb3-b87fde5a0a26"
-                  courtRoomId: "9e4932f7-97b2-3010-b942-ddd2624e4dd8"
-                  uploadedDate: "2026-06-17"
-                  version: 2
-                  isActive: false
+                  configurations:
+                    - courtCentreId: "f8254db1-1683-483e-afb3-b87fde5a0a26"
+                      courtRoomId: "9e4932f7-97b2-3010-b942-ddd2624e4dd8"
+                      uploadedDate: "2026-06-16"
+                      version: 1
+                      isActive: true
+                    - courtCentreId: "a3e1bc72-5f4d-4c8a-b210-1de2f9a0c3b7"
+                      courtRoomId: "c7d3a1e5-8b92-4f10-a3d2-6e1f7b4c9d08"
+                      uploadedDate: "2026-06-16"
+                      version: 3
+                      isActive: false
       responses:
-        '201':
-          description: Configuration created.
+        '200':
+          description: All configurations upserted successfully.
           content:
             application/vnd.casedocumentknowledge-service.discovery-scheduler-configuration+json:
               schema:
                 type: object
-                required: [message]
+                required: [message, loaded]
                 properties:
                   message:
                     type: string
-                    description: Human-readable confirmation that the configuration was accepted.
+                    description: Human-readable confirmation of the upsert operation.
+                  loaded:
+                    type: integer
+                    minimum: 1
+                    description: Number of configurations upserted in this request.
               examples:
                 example:
                   value:
-                    message: "New configuration loaded."
+                    message: "2 configurations loaded."
+                    loaded: 2
         '400':
-          description: Invalid request (missing or malformed fields).
-          content:
-            application/vnd.casedocumentknowledge-service.discovery-scheduler-configuration+json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
-        '409':
-          description: A configuration for this Court Centre / Court Room / version already exists.
+          description: Invalid request (missing or malformed fields, or empty configurations array).
           content:
             application/vnd.casedocumentknowledge-service.discovery-scheduler-configuration+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
@@ -831,6 +841,20 @@ components:
           nullable: true
 
     # ---- Discovery Scheduler ----
+    DiscoverySchedulerConfigurationBatchRequest:
+      type: object
+      required: [configurations]
+      properties:
+        configurations:
+          type: array
+          minItems: 1
+          maxItems: 500
+          description: |
+            Batch of configurations to upsert. At least 1 and at most 500 items per request.
+            All items are applied atomically — the entire batch succeeds or nothing is persisted.
+          items:
+            $ref: '#/components/schemas/DiscoverySchedulerConfigurationRequest'
+
     DiscoverySchedulerConfigurationRequest:
       type: object
       required: [courtCentreId, courtRoomId, uploadedDate, version, isActive]

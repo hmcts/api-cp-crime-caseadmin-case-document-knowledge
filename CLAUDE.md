@@ -127,7 +127,7 @@ camelCase, verb + noun. Examples:
 - `listQueryCatalogue`, `getQueryCatalogueItem`, `setQueryCatalogueLabel`
 - `upsertQueries`, `getQuery`, `listQueryVersions`
 - `startIngestionProcess`, `getIngestionStatus`
-- `createDiscoverySchedulerConfiguration`
+- `upsertDiscoverySchedulerConfigurations`
 
 ### Vendor media types
 Pattern: `application/vnd.casedocumentknowledge-service.{slug}+json`
@@ -418,7 +418,7 @@ Example: `DiscoverySchedulerConfigurationRequest` uses `(courtCentreId, courtRoo
 | Answers | `GET /v2/cases/{caseId}/queries/{queryId}/answers`, `GET /answers/{caseId}/{queryId}/with-llm` |
 | Ingestion | `GET /ingestions/status`, `POST /ingestions/start` |
 | Document | `GET /document/{documentId}/content` |
-| Discovery Scheduler | `POST /discovery-scheduler/configurations` |
+| Discovery Scheduler | `POST /discovery-scheduler/configurations` (batch upsert, max 500 items) |
 
 ### Key enums
 

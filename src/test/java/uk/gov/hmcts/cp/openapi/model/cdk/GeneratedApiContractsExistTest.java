@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.cp.config.OpenAPIConfigurationLoader;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +35,31 @@ class GeneratedApiContractsExistTest {
         assertThat(info.getLicense().getUrl()).isEqualTo("https://opensource.org/licenses/MIT");
 
         assertThat(info.getContact().getEmail()).isEqualTo("no-reply@hmcts.com");
+    }
+
+    @Test
+    void discoverySchedulerConfigurationRequest_schema_should_declare_required_fields_and_correct_formats() {
+        OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
+        Schema<?> schema = openAPI.getComponents().getSchemas().get("DiscoverySchedulerConfigurationRequest");
+
+        assertThat(schema).isNotNull();
+        assertThat(schema.getRequired()).containsAll(
+            List.of("courtCentreId", "courtRoomId", "uploadedDate", "version", "isActive")
+        );
+
+        Map<String, Schema> properties = schema.getProperties();
+        assertThat(properties).containsKeys("courtCentreId", "courtRoomId", "uploadedDate", "version", "isActive");
+
+        assertThat(properties.get("courtCentreId").getType()).isEqualTo("string");
+        assertThat(properties.get("courtCentreId").getFormat()).isEqualTo("uuid");
+
+        assertThat(properties.get("courtRoomId").getType()).isEqualTo("string");
+        assertThat(properties.get("courtRoomId").getFormat()).isEqualTo("uuid");
+
+        assertThat(properties.get("uploadedDate").getType()).isEqualTo("string");
+        assertThat(properties.get("uploadedDate").getFormat()).isEqualTo("date");
+
+        assertThat(properties.get("version").getType()).isEqualTo("integer");
     }
 
     @Test

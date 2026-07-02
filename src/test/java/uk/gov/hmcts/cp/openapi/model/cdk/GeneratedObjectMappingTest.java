@@ -140,6 +140,39 @@ class GeneratedObjectMappingTest {
         assertThat(item.getCreatedAt()).isNull();
     }
 
+    @Test
+    void json_should_map_to_DiscoverySchedulerConfigurationRequest_object() throws JsonProcessingException {
+        String json = "{\n" +
+                "  \"courtCentreId\": \"f8254db1-1683-483e-afb3-b87fde5a0a26\",\n" +
+                "  \"courtRoomId\": \"9e4932f7-97b2-3010-b942-ddd2624e4dd8\",\n" +
+                "  \"uploadedDate\": \"2026-06-16\",\n" +
+                "  \"version\": 1,\n" +
+                "  \"isActive\": true\n" +
+                "}";
+
+        DiscoverySchedulerConfigurationRequest request = mapper.readValue(json, DiscoverySchedulerConfigurationRequest.class);
+        assertThat(request.getCourtCentreId().toString()).isEqualTo("f8254db1-1683-483e-afb3-b87fde5a0a26");
+        assertThat(request.getCourtRoomId().toString()).isEqualTo("9e4932f7-97b2-3010-b942-ddd2624e4dd8");
+        assertThat(toText(request.getUploadedDate())).isEqualTo("2026-06-16");
+        assertThat(request.getVersion()).isEqualTo(1);
+        assertThat(request.getIsActive()).isTrue();
+    }
+
+    @Test
+    void json_should_map_to_DiscoverySchedulerConfigurationRequest_with_isActive_false() throws JsonProcessingException {
+        String json = "{\n" +
+                "  \"courtCentreId\": \"f8254db1-1683-483e-afb3-b87fde5a0a26\",\n" +
+                "  \"courtRoomId\": \"9e4932f7-97b2-3010-b942-ddd2624e4dd8\",\n" +
+                "  \"uploadedDate\": \"2026-06-17\",\n" +
+                "  \"version\": 2,\n" +
+                "  \"isActive\": false\n" +
+                "}";
+
+        DiscoverySchedulerConfigurationRequest request = mapper.readValue(json, DiscoverySchedulerConfigurationRequest.class);
+        assertThat(request.getVersion()).isEqualTo(2);
+        assertThat(request.getIsActive()).isFalse();
+    }
+
     private static String toText(Object value) {
         return value == null ? null : value.toString();
     }

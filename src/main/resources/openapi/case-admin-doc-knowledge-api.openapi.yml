@@ -34,6 +34,8 @@ tags:
     description: Document ingestion progress for a Case (blob upload → knowledge ingested).
   - name: Document
     description: Provide document url based on document Id.
+  - name: Discovery Scheduler
+    description: Manage versioned Discovery Scheduler configurations that control which Court Centre / Court Room combinations are enabled for nightly processing.
 
 paths:
   # ---------------------------
@@ -474,6 +476,67 @@ paths:
             application/vnd.casedocumentknowledge-service.ingestion-process+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
+  # ---------------------------
+  # Discovery Scheduler Configurations
+  # ---------------------------
+  /discovery-scheduler/configurations:
+    post:
+      tags: [Discovery Scheduler]
+      summary: Upsert a versioned Discovery Scheduler configuration
+      description: |
+        Creates or updates a versioned configuration that records whether a **Court Centre / Court Room**
+        combination is enabled for the nightly Discovery Scheduler process.
+
+        This is an **upsert**: if a configuration for the same `(courtCentreId, courtRoomId, version)`
+        already exists it is overwritten; otherwise a new record is created. Duplicate submissions
+        are therefore safe to retry.
+
+        The nightly scheduler always uses the **latest version** for each Court Centre / Court Room combination.
+      operationId: upsertDiscoverySchedulerConfiguration
+      requestBody:
+        required: true
+        content:
+          application/vnd.casedocumentknowledge-service.discovery-scheduler-configuration+json:
+            schema: { $ref: '#/components/schemas/DiscoverySchedulerConfigurationRequest' }
+            examples:
+              enabled:
+                summary: Enable a Court Centre / Court Room combination
+                value:
+                  courtCentreId: "f8254db1-1683-483e-afb3-b87fde5a0a26"
+                  courtRoomId: "9e4932f7-97b2-3010-b942-ddd2624e4dd8"
+                  uploadedDate: "2026-06-16"
+                  version: 1
+                  isActive: true
+              disabled:
+                summary: Disable a previously enabled combination (new version)
+                value:
+                  courtCentreId: "f8254db1-1683-483e-afb3-b87fde5a0a26"
+                  courtRoomId: "9e4932f7-97b2-3010-b942-ddd2624e4dd8"
+                  uploadedDate: "2026-06-17"
+                  version: 2
+                  isActive: false
+      responses:
+        '200':
+          description: Configuration upserted successfully.
+          content:
+            application/vnd.casedocumentknowledge-service.discovery-scheduler-configuration+json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    type: string
+                    description: Human-readable confirmation of the upsert operation.
+              examples:
+                example:
+                  value:
+                    message: "Configuration loaded."
+        '400':
+          description: Invalid request (missing or malformed fields).
+          content:
+            application/vnd.casedocumentknowledge-service.discovery-scheduler-configuration+json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
 components:
   schemas:
     # ---- Query Catalogue ----
@@ -761,6 +824,38 @@ components:
         message:
           type: string
           nullable: true
+
+    # ---- Discovery Scheduler ----
+    DiscoverySchedulerConfigurationRequest:
+      type: object
+      required: [courtCentreId, courtRoomId, uploadedDate, version, isActive]
+      properties:
+        courtCentreId:
+          type: string
+          format: uuid
+          description: Identifier of the Court Centre to configure.
+        courtRoomId:
+          type: string
+          format: uuid
+          description: Identifier of the Court Room within the Court Centre to configure.
+        uploadedDate:
+          type: string
+          format: date
+          description: Calendar date on which this configuration record was uploaded (ISO 8601, e.g. "2026-06-16").
+          example: "2026-06-16"
+        version:
+          type: integer
+          minimum: 1
+          description: |
+            Monotonically increasing version number for this Court Centre / Court Room combination.
+            Each new version supersedes all previous ones; the nightly scheduler always uses the latest.
+          example: 1
+        isActive:
+          type: boolean
+          description: |
+            When `true` the Court Centre / Court Room combination is enabled for nightly Discovery
+            Scheduler processing. Set to `false` to disable without deleting prior versions.
+          example: true
 
     # ---- Errors ----
     ErrorResponse:

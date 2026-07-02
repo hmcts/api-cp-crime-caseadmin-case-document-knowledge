@@ -59,7 +59,7 @@ Never omit `+json`. The slug is a lowercase hyphenated noun derived from the res
 ### operationId
 camelCase verb + noun. Examples:
 - `listQueryCatalogue`, `getQueryCatalogueItem`, `setQueryCatalogueLabel`
-- `upsertQueries`, `upsertDiscoverySchedulerConfigurations`, `startIngestionProcess`
+- `upsertQueries`, `upsertDiscoverySchedulerConfiguration`, `startIngestionProcess`
 
 ### HTTP status codes
 | Status | When to use |
@@ -283,7 +283,7 @@ If `spotlessApply` fails:
 | Answers | GET /v2/cases/{caseId}/queries/{queryId}/answers, GET /answers/{caseId}/{queryId}/with-llm |
 | Ingestion | GET /ingestions/status, POST /ingestions/start |
 | Document | GET /document/{documentId}/content |
-| Discovery Scheduler | POST /discovery-scheduler/configurations (batch upsert, max 500 items) |
+| Discovery Scheduler | POST /discovery-scheduler/configurations (single upsert) |
 
 ### Schemas
 | Schema | Type | Key fields |
@@ -302,7 +302,6 @@ If `spotlessApply` fails:
 | `IngestionStatusResponse` | Object | scope, phase, lastUpdated, message |
 | `IngestionProcessRequest` | Object | courtCentreId, roomId, date, effectiveAt |
 | `IngestionProcessResponse` | Object | phase, lastUpdated, message |
-| `DiscoverySchedulerConfigurationBatchRequest` | Object | configurations[] (min 1, max 500, items are `DiscoverySchedulerConfigurationRequest`) |
 | `DiscoverySchedulerConfigurationRequest` | Object | courtCentreId, courtRoomId, uploadedDate, version, isActive |
 | `ErrorResponse` | Object | error, message, timestamp, traceId |
 

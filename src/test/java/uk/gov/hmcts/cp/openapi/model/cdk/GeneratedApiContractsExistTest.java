@@ -38,23 +38,6 @@ class GeneratedApiContractsExistTest {
     }
 
     @Test
-    void discoverySchedulerConfigurationBatchRequest_schema_should_declare_configurations_array_with_limits() {
-        OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
-        Schema<?> schema = openAPI.getComponents().getSchemas().get("DiscoverySchedulerConfigurationBatchRequest");
-
-        assertThat(schema).isNotNull();
-        assertThat(schema.getRequired()).contains("configurations");
-
-        Map<String, Schema> properties = schema.getProperties();
-        assertThat(properties).containsKey("configurations");
-
-        Schema<?> configurationsSchema = properties.get("configurations");
-        assertThat(configurationsSchema.getType()).isEqualTo("array");
-        assertThat(configurationsSchema.getMinItems()).isEqualTo(1);
-        assertThat(configurationsSchema.getMaxItems()).isEqualTo(500);
-    }
-
-    @Test
     void discoverySchedulerConfigurationRequest_schema_should_declare_required_fields_and_correct_formats() {
         OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
         Schema<?> schema = openAPI.getComponents().getSchemas().get("DiscoverySchedulerConfigurationRequest");

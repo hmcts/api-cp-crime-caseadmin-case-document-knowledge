@@ -25,7 +25,6 @@ class GeneratedModelContractsExistTest {
                 "uk.gov.hmcts.cp.openapi.model.cdk.ErrorResponse",
                 "uk.gov.hmcts.cp.openapi.model.cdk.QueryLevel",
                 "uk.gov.hmcts.cp.openapi.model.cdk.AnswerStatus",
-                "uk.gov.hmcts.cp.openapi.model.cdk.DiscoverySchedulerConfigurationBatchRequest",
                 "uk.gov.hmcts.cp.openapi.model.cdk.DiscoverySchedulerConfigurationRequest"
         );
 
@@ -160,12 +159,6 @@ class GeneratedModelContractsExistTest {
                 "AnswerStatus must contain ANSWER_NOT_AVAILABLE. Was: " + names);
         assertTrue(names.contains("IDPC_NOT_FOUND"),
                 "AnswerStatus must contain IDPC_NOT_FOUND. Was: " + names);
-    }
-
-    @Test
-    void discoverySchedulerConfigurationBatchRequest_should_have_expected_accessors() throws Exception {
-        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.DiscoverySchedulerConfigurationBatchRequest");
-        assertHasGetter(cls, "getConfigurations");
     }
 
     @Test

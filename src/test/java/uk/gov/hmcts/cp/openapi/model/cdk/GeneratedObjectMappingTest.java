@@ -141,58 +141,36 @@ class GeneratedObjectMappingTest {
     }
 
     @Test
-    void json_should_map_to_DiscoverySchedulerConfigurationBatchRequest_with_multiple_items() throws JsonProcessingException {
+    void json_should_map_to_DiscoverySchedulerConfigurationRequest_object() throws JsonProcessingException {
         String json = "{\n" +
-                "  \"configurations\": [\n" +
-                "    {\n" +
-                "      \"courtCentreId\": \"f8254db1-1683-483e-afb3-b87fde5a0a26\",\n" +
-                "      \"courtRoomId\": \"9e4932f7-97b2-3010-b942-ddd2624e4dd8\",\n" +
-                "      \"uploadedDate\": \"2026-06-16\",\n" +
-                "      \"version\": 1,\n" +
-                "      \"isActive\": true\n" +
-                "    },\n" +
-                "    {\n" +
-                "      \"courtCentreId\": \"a3e1bc72-5f4d-4c8a-b210-1de2f9a0c3b7\",\n" +
-                "      \"courtRoomId\": \"c7d3a1e5-8b92-4f10-a3d2-6e1f7b4c9d08\",\n" +
-                "      \"uploadedDate\": \"2026-06-17\",\n" +
-                "      \"version\": 2,\n" +
-                "      \"isActive\": false\n" +
-                "    }\n" +
-                "  ]\n" +
+                "  \"courtCentreId\": \"f8254db1-1683-483e-afb3-b87fde5a0a26\",\n" +
+                "  \"courtRoomId\": \"9e4932f7-97b2-3010-b942-ddd2624e4dd8\",\n" +
+                "  \"uploadedDate\": \"2026-06-16\",\n" +
+                "  \"version\": 1,\n" +
+                "  \"isActive\": true\n" +
                 "}";
 
-        DiscoverySchedulerConfigurationBatchRequest batch = mapper.readValue(json, DiscoverySchedulerConfigurationBatchRequest.class);
-        assertThat(batch.getConfigurations()).hasSize(2);
-
-        DiscoverySchedulerConfigurationRequest first = batch.getConfigurations().get(0);
-        assertThat(first.getCourtCentreId().toString()).isEqualTo("f8254db1-1683-483e-afb3-b87fde5a0a26");
-        assertThat(first.getCourtRoomId().toString()).isEqualTo("9e4932f7-97b2-3010-b942-ddd2624e4dd8");
-        assertThat(toText(first.getUploadedDate())).isEqualTo("2026-06-16");
-        assertThat(first.getVersion()).isEqualTo(1);
-        assertThat(first.getIsActive()).isTrue();
-
-        DiscoverySchedulerConfigurationRequest second = batch.getConfigurations().get(1);
-        assertThat(second.getVersion()).isEqualTo(2);
-        assertThat(second.getIsActive()).isFalse();
+        DiscoverySchedulerConfigurationRequest request = mapper.readValue(json, DiscoverySchedulerConfigurationRequest.class);
+        assertThat(request.getCourtCentreId().toString()).isEqualTo("f8254db1-1683-483e-afb3-b87fde5a0a26");
+        assertThat(request.getCourtRoomId().toString()).isEqualTo("9e4932f7-97b2-3010-b942-ddd2624e4dd8");
+        assertThat(toText(request.getUploadedDate())).isEqualTo("2026-06-16");
+        assertThat(request.getVersion()).isEqualTo(1);
+        assertThat(request.getIsActive()).isTrue();
     }
 
     @Test
-    void json_should_map_to_DiscoverySchedulerConfigurationBatchRequest_with_single_item() throws JsonProcessingException {
+    void json_should_map_to_DiscoverySchedulerConfigurationRequest_with_isActive_false() throws JsonProcessingException {
         String json = "{\n" +
-                "  \"configurations\": [\n" +
-                "    {\n" +
-                "      \"courtCentreId\": \"f8254db1-1683-483e-afb3-b87fde5a0a26\",\n" +
-                "      \"courtRoomId\": \"9e4932f7-97b2-3010-b942-ddd2624e4dd8\",\n" +
-                "      \"uploadedDate\": \"2026-06-16\",\n" +
-                "      \"version\": 1,\n" +
-                "      \"isActive\": true\n" +
-                "    }\n" +
-                "  ]\n" +
+                "  \"courtCentreId\": \"f8254db1-1683-483e-afb3-b87fde5a0a26\",\n" +
+                "  \"courtRoomId\": \"9e4932f7-97b2-3010-b942-ddd2624e4dd8\",\n" +
+                "  \"uploadedDate\": \"2026-06-17\",\n" +
+                "  \"version\": 2,\n" +
+                "  \"isActive\": false\n" +
                 "}";
 
-        DiscoverySchedulerConfigurationBatchRequest batch = mapper.readValue(json, DiscoverySchedulerConfigurationBatchRequest.class);
-        assertThat(batch.getConfigurations()).hasSize(1);
-        assertThat(batch.getConfigurations().get(0).getIsActive()).isTrue();
+        DiscoverySchedulerConfigurationRequest request = mapper.readValue(json, DiscoverySchedulerConfigurationRequest.class);
+        assertThat(request.getVersion()).isEqualTo(2);
+        assertThat(request.getIsActive()).isFalse();
     }
 
     private static String toText(Object value) {

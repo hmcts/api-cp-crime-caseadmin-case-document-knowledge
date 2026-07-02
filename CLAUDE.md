@@ -164,7 +164,7 @@ schema: { type: string, format: uuid }
 Multi-property objects use the full block form.
 
 ### Schema conventions
-- Names: PascalCase (`DiscoverySchedulerConfiguration`, `ErrorResponse`)
+- Names: PascalCase (`DiscoverySchedulerConfigurationRequest`, `ErrorResponse`)
 - Enums: separate named schema, SCREAMING_SNAKE_CASE values
 - `required:` always present on request/response bodies
 - `nullable: true` only where the field is genuinely optional in the response
@@ -378,7 +378,7 @@ Several resources use an explicit integer `version` field (not server-generated)
 - Older versions are retained for audit trail — there is no DELETE
 - A `(domainKey1, domainKey2, version)` triple must be unique → `409` if it already exists
 
-Example: `DiscoverySchedulerConfiguration` uses `(courtCentreId, courtRoomId, version)`.
+Example: `DiscoverySchedulerConfigurationRequest` uses `(courtCentreId, courtRoomId, version)` as the composite uniqueness key.
 
 ---
 

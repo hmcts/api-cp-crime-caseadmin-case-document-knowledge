@@ -25,8 +25,7 @@ class GeneratedModelContractsExistTest {
                 "uk.gov.hmcts.cp.openapi.model.cdk.ErrorResponse",
                 "uk.gov.hmcts.cp.openapi.model.cdk.QueryLevel",
                 "uk.gov.hmcts.cp.openapi.model.cdk.AnswerStatus",
-                "uk.gov.hmcts.cp.openapi.model.cdk.DiscoverySchedulerConfigurationRequest",
-                "uk.gov.hmcts.cp.openapi.model.cdk.DiscoverySchedulerConfiguration"
+                "uk.gov.hmcts.cp.openapi.model.cdk.DiscoverySchedulerConfigurationRequest"
         );
 
         for (String fqcn : models) {
@@ -165,16 +164,6 @@ class GeneratedModelContractsExistTest {
     @Test
     void discoverySchedulerConfigurationRequest_should_have_expected_accessors() throws Exception {
         Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.DiscoverySchedulerConfigurationRequest");
-        assertHasGetter(cls, "getCourtCentreId");
-        assertHasGetter(cls, "getCourtRoomId");
-        assertHasGetter(cls, "getUploadedDate");
-        assertHasGetter(cls, "getVersion");
-        assertHasGetter(cls, "getIsActive");
-    }
-
-    @Test
-    void discoverySchedulerConfiguration_should_have_expected_accessors() throws Exception {
-        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.DiscoverySchedulerConfiguration");
         assertHasGetter(cls, "getCourtCentreId");
         assertHasGetter(cls, "getCourtRoomId");
         assertHasGetter(cls, "getUploadedDate");

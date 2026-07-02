@@ -141,7 +141,7 @@ class GeneratedObjectMappingTest {
     }
 
     @Test
-    void json_should_map_to_DiscoverySchedulerConfiguration_object() throws JsonProcessingException {
+    void json_should_map_to_DiscoverySchedulerConfigurationRequest_object() throws JsonProcessingException {
         String json = "{\n" +
                 "  \"courtCentreId\": \"f8254db1-1683-483e-afb3-b87fde5a0a26\",\n" +
                 "  \"courtRoomId\": \"9e4932f7-97b2-3010-b942-ddd2624e4dd8\",\n" +
@@ -150,27 +150,12 @@ class GeneratedObjectMappingTest {
                 "  \"isActive\": true\n" +
                 "}";
 
-        DiscoverySchedulerConfiguration config = mapper.readValue(json, DiscoverySchedulerConfiguration.class);
-        assertThat(config.getCourtCentreId().toString()).isEqualTo("f8254db1-1683-483e-afb3-b87fde5a0a26");
-        assertThat(config.getCourtRoomId().toString()).isEqualTo("9e4932f7-97b2-3010-b942-ddd2624e4dd8");
-        assertThat(toText(config.getUploadedDate())).isEqualTo("2026-06-16");
-        assertThat(config.getVersion()).isEqualTo(1);
-        assertThat(config.getIsActive()).isTrue();
-    }
-
-    @Test
-    void json_should_map_to_DiscoverySchedulerConfiguration_with_isActive_false() throws JsonProcessingException {
-        String json = "{\n" +
-                "  \"courtCentreId\": \"f8254db1-1683-483e-afb3-b87fde5a0a26\",\n" +
-                "  \"courtRoomId\": \"9e4932f7-97b2-3010-b942-ddd2624e4dd8\",\n" +
-                "  \"uploadedDate\": \"2026-06-17\",\n" +
-                "  \"version\": 2,\n" +
-                "  \"isActive\": false\n" +
-                "}";
-
-        DiscoverySchedulerConfiguration config = mapper.readValue(json, DiscoverySchedulerConfiguration.class);
-        assertThat(config.getVersion()).isEqualTo(2);
-        assertThat(config.getIsActive()).isFalse();
+        DiscoverySchedulerConfigurationRequest request = mapper.readValue(json, DiscoverySchedulerConfigurationRequest.class);
+        assertThat(request.getCourtCentreId().toString()).isEqualTo("f8254db1-1683-483e-afb3-b87fde5a0a26");
+        assertThat(request.getCourtRoomId().toString()).isEqualTo("9e4932f7-97b2-3010-b942-ddd2624e4dd8");
+        assertThat(toText(request.getUploadedDate())).isEqualTo("2026-06-16");
+        assertThat(request.getVersion()).isEqualTo(1);
+        assertThat(request.getIsActive()).isTrue();
     }
 
     private static String toText(Object value) {

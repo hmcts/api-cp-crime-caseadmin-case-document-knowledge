@@ -517,18 +517,20 @@ paths:
                   isActive: false
       responses:
         '201':
-          description: Configuration created; returns the stored record.
+          description: Configuration created.
           content:
             application/vnd.casedocumentknowledge-service.discovery-scheduler-configuration+json:
-              schema: { $ref: '#/components/schemas/DiscoverySchedulerConfiguration' }
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    type: string
+                    description: Human-readable confirmation that the configuration was accepted.
               examples:
                 example:
                   value:
-                    courtCentreId: "f8254db1-1683-483e-afb3-b87fde5a0a26"
-                    courtRoomId: "9e4932f7-97b2-3010-b942-ddd2624e4dd8"
-                    uploadedDate: "2026-06-16"
-                    version: 1
-                    isActive: true
+                    message: "New configuration loaded."
         '400':
           description: Invalid request (missing or malformed fields).
           content:
@@ -858,33 +860,6 @@ components:
           description: |
             When `true` the Court Centre / Court Room combination is enabled for nightly Discovery
             Scheduler processing. Set to `false` to disable without deleting prior versions.
-          example: true
-
-    DiscoverySchedulerConfiguration:
-      type: object
-      required: [courtCentreId, courtRoomId, uploadedDate, version, isActive]
-      properties:
-        courtCentreId:
-          type: string
-          format: uuid
-          description: Identifier of the Court Centre.
-        courtRoomId:
-          type: string
-          format: uuid
-          description: Identifier of the Court Room within the Court Centre.
-        uploadedDate:
-          type: string
-          format: date
-          description: Calendar date on which this configuration record was uploaded.
-          example: "2026-06-16"
-        version:
-          type: integer
-          minimum: 1
-          description: Version number for this configuration record.
-          example: 1
-        isActive:
-          type: boolean
-          description: Whether this Court Centre / Court Room combination is enabled for nightly processing.
           example: true
 
     # ---- Errors ----

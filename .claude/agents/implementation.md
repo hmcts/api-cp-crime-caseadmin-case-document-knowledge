@@ -303,7 +303,6 @@ If `spotlessApply` fails:
 | `IngestionProcessRequest` | Object | courtCentreId, roomId, date, effectiveAt |
 | `IngestionProcessResponse` | Object | phase, lastUpdated, message |
 | `DiscoverySchedulerConfigurationRequest` | Object | courtCentreId, courtRoomId, uploadedDate, version, isActive |
-| `DiscoverySchedulerConfiguration` | Object | courtCentreId, courtRoomId, uploadedDate, version, isActive |
 | `ErrorResponse` | Object | error, message, timestamp, traceId |
 
 ### Enums

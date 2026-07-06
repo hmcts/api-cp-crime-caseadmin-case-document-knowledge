@@ -141,6 +141,7 @@ Existing slugs:
 | `answers.v2` | Answers v2 endpoint |
 | `ingestion` | Ingestion status |
 | `ingestion-process` | Ingestion start |
+| `ingestion-process-by-case` | Ingestion by-case endpoint |
 | `document-content` | Document download |
 | `discovery-scheduler-configuration` | Discovery Scheduler |
 

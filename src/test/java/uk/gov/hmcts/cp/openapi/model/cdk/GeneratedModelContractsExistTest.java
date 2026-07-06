@@ -25,7 +25,8 @@ class GeneratedModelContractsExistTest {
                 "uk.gov.hmcts.cp.openapi.model.cdk.ErrorResponse",
                 "uk.gov.hmcts.cp.openapi.model.cdk.QueryLevel",
                 "uk.gov.hmcts.cp.openapi.model.cdk.AnswerStatus",
-                "uk.gov.hmcts.cp.openapi.model.cdk.DiscoverySchedulerConfigurationRequest"
+                "uk.gov.hmcts.cp.openapi.model.cdk.DiscoverySchedulerConfigurationRequest",
+                "uk.gov.hmcts.cp.openapi.model.cdk.IngestionProcessByCaseRequest"
         );
 
         for (String fqcn : models) {
@@ -169,6 +170,30 @@ class GeneratedModelContractsExistTest {
         assertHasGetter(cls, "getUploadedDate");
         assertHasGetter(cls, "getVersion");
         assertHasGetter(cls, "getIsActive");
+    }
+
+    @Test
+    void ingestionProcessByCaseRequest_should_have_expected_accessors() throws Exception {
+        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.IngestionProcessByCaseRequest");
+        assertHasGetter(cls, "getCaseId");
+    }
+
+    @Test
+    void ingestionProcessResponse_should_have_expected_accessors() throws Exception {
+        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.IngestionProcessResponse");
+        assertHasGetter(cls, "getPhase");
+        assertHasGetter(cls, "getLastUpdated");
+        assertHasGetter(cls, "getMessage");
+    }
+
+    @Test
+    void ingestionProcessPhase_enum_has_expected_values() throws Exception {
+        Class<?> enumCls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.IngestionProcessPhase");
+        assertTrue(enumCls.isEnum(), "IngestionProcessPhase should be an enum");
+
+        var names = enumNames(enumCls);
+        assertTrue(names.containsAll(List.of("STARTED", "FAILED", "NOT_REQUIRED")),
+                "IngestionProcessPhase must contain STARTED, FAILED, NOT_REQUIRED. Was: " + names);
     }
 
     // ---------- helpers ----------

@@ -173,6 +173,30 @@ class GeneratedObjectMappingTest {
         assertThat(request.getIsActive()).isFalse();
     }
 
+    @Test
+    void json_should_map_to_IngestionProcessByCaseRequest_object() throws JsonProcessingException {
+        String json = "{\n" +
+                "  \"caseId\": \"c0b2d8c2-3d62-4d7c-a2f5-1a4efc1d0c3b\"\n" +
+                "}";
+
+        IngestionProcessByCaseRequest request = mapper.readValue(json, IngestionProcessByCaseRequest.class);
+        assertThat(request.getCaseId().toString()).isEqualTo("c0b2d8c2-3d62-4d7c-a2f5-1a4efc1d0c3b");
+    }
+
+    @Test
+    void json_should_map_to_IngestionProcessResponse_with_notRequired_phase() throws JsonProcessingException {
+        String json = "{\n" +
+                "  \"phase\": \"NOT_REQUIRED\",\n" +
+                "  \"lastUpdated\": \"2026-06-29T10:15:23.256710385Z\",\n" +
+                "  \"message\": \"Ingestion process not started because no newer IDPC version is available and an Answers version already exists.\"\n" +
+                "}";
+
+        IngestionProcessResponse response = mapper.readValue(json, IngestionProcessResponse.class);
+        assertThat(response.getPhase().toString()).isEqualTo("NOT_REQUIRED");
+        assertThat(toText(response.getLastUpdated())).isEqualTo("2026-06-29T10:15:23.256710385Z");
+        assertThat(response.getMessage()).isEqualTo("Ingestion process not started because no newer IDPC version is available and an Answers version already exists.");
+    }
+
     private static String toText(Object value) {
         return value == null ? null : value.toString();
     }

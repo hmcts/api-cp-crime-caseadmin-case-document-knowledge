@@ -63,6 +63,32 @@ class GeneratedApiContractsExistTest {
     }
 
     @Test
+    void ingestionProcessByCaseRequest_schema_should_declare_required_fields_and_correct_formats() {
+        OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
+        Schema<?> schema = openAPI.getComponents().getSchemas().get("IngestionProcessByCaseRequest");
+
+        assertThat(schema).isNotNull();
+        assertThat(schema.getRequired()).containsAll(List.of("caseId"));
+
+        Map<String, Schema> properties = schema.getProperties();
+        assertThat(properties.get("caseId").getType()).isEqualTo("string");
+        assertThat(properties.get("caseId").getFormat()).isEqualTo("uuid");
+    }
+
+    @Test
+    void ingestionProcessPhase_enum_schema_should_declare_expected_values() {
+        OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
+        Schema<?> schema = openAPI.getComponents().getSchemas().get("IngestionProcessPhase");
+
+        assertThat(schema).isNotNull();
+        List<String> enumValues = new java.util.ArrayList<>();
+        for (Object value : schema.getEnum()) {
+            enumValues.add(String.valueOf(value));
+        }
+        assertThat(enumValues).containsAll(List.of("STARTED", "FAILED", "NOT_REQUIRED"));
+    }
+
+    @Test
     void answerResponse_schema_should_require_userQuery_and_createdAt() {
         OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
         Schema<?> answerResponseSchema = openAPI.getComponents().getSchemas().get("AnswerResponse");

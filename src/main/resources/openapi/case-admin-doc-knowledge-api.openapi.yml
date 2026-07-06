@@ -479,7 +479,7 @@ paths:
   # ---------------------------
   # Ingestion Background Processing (by Case)
   # ---------------------------
-  /ingestions/start/by-case:
+  /ingestions/start-by-case:
     post:
       tags: [Ingestion]
       summary: Start ingestion process for a specific case

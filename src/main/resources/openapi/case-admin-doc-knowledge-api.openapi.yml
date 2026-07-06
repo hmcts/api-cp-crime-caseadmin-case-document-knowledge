@@ -477,6 +477,57 @@ paths:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   # ---------------------------
+  # Ingestion Background Processing (by Case)
+  # ---------------------------
+  /ingestions/start/by-case:
+    post:
+      tags: [Ingestion]
+      summary: Start ingestion process for a specific case
+      description: Triggered by the ProcessIDPC button on the AI search page. Starts the backend ingestion process for a specific case, or reports why it will not start, so the UI can render the outcome.
+      operationId: startIngestionProcessByCase
+      requestBody:
+        required: true
+        content:
+          application/vnd.casedocumentknowledge-service.ingestion-process-by-case+json:
+            schema: { $ref: '#/components/schemas/IngestionProcessByCaseRequest' }
+            examples:
+              example:
+                value:
+                  caseId: "c0b2d8c2-3d62-4d7c-a2f5-1a4efc1d0c3b"
+      responses:
+        '200':
+          description: ingestion process outcome
+          content:
+            application/vnd.casedocumentknowledge-service.ingestion-process-by-case+json:
+              schema: { $ref: '#/components/schemas/IngestionProcessResponse' }
+              examples:
+                started:
+                  value:
+                    phase: "STARTED"
+                    lastUpdated: "2026-04-21T16:13:23.256710385Z"
+                    message: "Ingestion workflow request accepted; task submitted via JobManager (requestId=f568c50d-11af-4710-9827-7fac7a468167)."
+                notRequired:
+                  value:
+                    phase: "NOT_REQUIRED"
+                    lastUpdated: "2026-06-29T10:15:23.256710385Z"
+                    message: "Ingestion process not started because no newer IDPC version is available and an Answers version already exists."
+                failed:
+                  value:
+                    phase: "FAILED"
+                    lastUpdated: "2026-06-29T10:15:23.256710385Z"
+                    message: "Ingestion process could not be started due to an internal error."
+        '400':
+          description: Missing or invalid caseId
+          content:
+            application/vnd.casedocumentknowledge-service.ingestion-process-by-case+json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: Case not found
+          content:
+            application/vnd.casedocumentknowledge-service.ingestion-process-by-case+json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  # ---------------------------
   # Discovery Scheduler Configurations
   # ---------------------------
   /discovery-scheduler/configurations:
@@ -786,6 +837,15 @@ components:
           format: date-time
           description: Version effective timestamp.
 
+    IngestionProcessByCaseRequest:
+      type: object
+      required: [ caseId ]
+      properties:
+        caseId:
+          type: string
+          format: uuid
+          description: Identifier of the Case for which the ingestion process should be started.
+
     # ---- Ingestion ----
     DocumentIngestionPhase:
       type: string
@@ -796,7 +856,7 @@ components:
     IngestionProcessPhase:
       type: string
       description: Backend process response.
-      enum: [ STARTED, FAILED ]
+      enum: [ STARTED, FAILED, NOT_REQUIRED ]
 
     IngestionStatusResponse:
       type: object

@@ -26,7 +26,10 @@ class GeneratedModelContractsExistTest {
                 "uk.gov.hmcts.cp.openapi.model.cdk.QueryLevel",
                 "uk.gov.hmcts.cp.openapi.model.cdk.AnswerStatus",
                 "uk.gov.hmcts.cp.openapi.model.cdk.DiscoverySchedulerConfigurationRequest",
-                "uk.gov.hmcts.cp.openapi.model.cdk.IngestionProcessByCaseRequest"
+                "uk.gov.hmcts.cp.openapi.model.cdk.IngestionProcessByCaseRequest",
+                "uk.gov.hmcts.cp.openapi.model.cdk.DiscoveryTriggerRequest",
+                "uk.gov.hmcts.cp.openapi.model.cdk.DiscoveryTriggerResponse",
+                "uk.gov.hmcts.cp.openapi.model.cdk.DiscoveryOperation"
         );
 
         for (String fqcn : models) {
@@ -170,6 +173,30 @@ class GeneratedModelContractsExistTest {
         assertHasGetter(cls, "getUploadedDate");
         assertHasGetter(cls, "getVersion");
         assertHasGetter(cls, "getIsActive");
+    }
+
+    @Test
+    void discoveryTriggerRequest_should_have_expected_accessors() throws Exception {
+        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.DiscoveryTriggerRequest");
+        assertHasGetter(cls, "getDiscoveryOperation");
+    }
+
+    @Test
+    void discoveryTriggerResponse_should_have_expected_accessors() throws Exception {
+        Class<?> cls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.DiscoveryTriggerResponse");
+        assertHasGetter(cls, "getDiscoveryOperation");
+        assertHasGetter(cls, "getMessage");
+        assertHasGetter(cls, "getCorrelationId");
+    }
+
+    @Test
+    void discoveryOperation_enum_has_expected_values() throws Exception {
+        Class<?> enumCls = Class.forName("uk.gov.hmcts.cp.openapi.model.cdk.DiscoveryOperation");
+        assertTrue(enumCls.isEnum(), "DiscoveryOperation should be an enum");
+
+        var names = enumNames(enumCls);
+        assertTrue(names.containsAll(List.of("INTRADAY", "NIGHTLY")),
+                "DiscoveryOperation must contain INTRADAY and NIGHTLY. Was: " + names);
     }
 
     @Test

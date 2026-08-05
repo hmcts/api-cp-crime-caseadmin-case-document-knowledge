@@ -63,6 +63,44 @@ class GeneratedApiContractsExistTest {
     }
 
     @Test
+    void discoveryTriggerRequest_schema_should_declare_required_fields_and_correct_formats() {
+        OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
+        Schema<?> schema = openAPI.getComponents().getSchemas().get("DiscoveryTriggerRequest");
+
+        assertThat(schema).isNotNull();
+        assertThat(schema.getRequired()).containsAll(List.of("discoveryOperation"));
+
+        Map<String, Schema> properties = schema.getProperties();
+        assertThat(properties).containsKey("discoveryOperation");
+    }
+
+    @Test
+    void discoveryTriggerResponse_schema_should_declare_required_fields_and_correct_formats() {
+        OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
+        Schema<?> schema = openAPI.getComponents().getSchemas().get("DiscoveryTriggerResponse");
+
+        assertThat(schema).isNotNull();
+        assertThat(schema.getRequired()).containsAll(List.of("discoveryOperation", "message"));
+
+        Map<String, Schema> properties = schema.getProperties();
+        assertThat(properties.get("message").getType()).isEqualTo("string");
+        assertThat(properties).containsKey("correlationId");
+    }
+
+    @Test
+    void discoveryOperation_enum_schema_should_declare_expected_values() {
+        OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
+        Schema<?> schema = openAPI.getComponents().getSchemas().get("DiscoveryOperation");
+
+        assertThat(schema).isNotNull();
+        List<String> enumValues = new java.util.ArrayList<>();
+        for (Object value : schema.getEnum()) {
+            enumValues.add(String.valueOf(value));
+        }
+        assertThat(enumValues).containsAll(List.of("INTRADAY", "NIGHTLY"));
+    }
+
+    @Test
     void ingestionProcessByCaseRequest_schema_should_declare_required_fields_and_correct_formats() {
         OpenAPI openAPI = new OpenAPIConfigurationLoader().openAPI();
         Schema<?> schema = openAPI.getComponents().getSchemas().get("IngestionProcessByCaseRequest");

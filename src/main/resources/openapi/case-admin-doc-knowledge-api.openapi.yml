@@ -588,6 +588,52 @@ paths:
             application/vnd.casedocumentknowledge-service.discovery-scheduler-configuration+json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
 
+  # ---------------------------
+  # Discovery Scheduler Trigger
+  # ---------------------------
+  /discovery-scheduler/trigger:
+    post:
+      tags: [Discovery Scheduler]
+      summary: Trigger an on-demand Discovery Scheduler run (intraday or nightly)
+      description: |
+        Dispatches an out-of-band, fire-and-forget run of the named Discovery Scheduler operation
+        (`INTRADAY` or `NIGHTLY`), reusing the existing scheduled operation unchanged. The response
+        is returned immediately — it does not wait for the dispatched run to complete.
+
+        This endpoint is restricted to **System Users** only — it is intended for internal,
+        system-to-system invocation (e.g. missed-run recovery, smoke-testing, support reprocessing)
+        and must not be exposed to interactive end users.
+      operationId: triggerDiscovery
+      requestBody:
+        required: true
+        content:
+          application/vnd.casedocumentknowledge-service.discovery-scheduler-trigger+json:
+            schema: { $ref: '#/components/schemas/DiscoveryTriggerRequest' }
+            examples:
+              intraday:
+                summary: Trigger the intraday discovery operation
+                value:
+                  discoveryOperation: INTRADAY
+              nightly:
+                summary: Trigger the nightly discovery operation
+                value:
+                  discoveryOperation: NIGHTLY
+      responses:
+        '202':
+          description: Discovery run accepted and dispatched for asynchronous processing.
+          content:
+            application/vnd.casedocumentknowledge-service.discovery-scheduler-trigger+json:
+              schema: { $ref: '#/components/schemas/DiscoveryTriggerResponse' }
+              example:
+                discoveryOperation: NIGHTLY
+                message: "Discovery run dispatched."
+                correlationId: "8f14e45f-ceea-467e-adc5-5b3a4dee8a5a"
+        '400':
+          description: Missing/unrecognised discoveryOperation or malformed request body.
+          content:
+            application/vnd.casedocumentknowledge-service.discovery-scheduler-trigger+json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
 components:
   schemas:
     # ---- Query Catalogue ----
@@ -916,6 +962,32 @@ components:
             When `true` the Court Centre / Court Room combination is enabled for nightly Discovery
             Scheduler processing. Set to `false` to disable without deleting prior versions.
           example: true
+
+    DiscoveryOperation:
+      type: string
+      description: Identifies which Discovery Scheduler operation to trigger on demand.
+      enum: [INTRADAY, NIGHTLY]
+
+    DiscoveryTriggerRequest:
+      type: object
+      required: [discoveryOperation]
+      properties:
+        discoveryOperation:
+          $ref: '#/components/schemas/DiscoveryOperation'
+
+    DiscoveryTriggerResponse:
+      type: object
+      required: [discoveryOperation, message]
+      properties:
+        discoveryOperation:
+          $ref: '#/components/schemas/DiscoveryOperation'
+        message:
+          type: string
+          description: Human-readable confirmation that the run was dispatched.
+          example: "Discovery run dispatched."
+        correlationId:
+          type: string
+          description: Correlation id the dispatched run logs under.
 
     # ---- Errors ----
     ErrorResponse:

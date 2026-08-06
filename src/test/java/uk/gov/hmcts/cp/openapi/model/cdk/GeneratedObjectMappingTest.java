@@ -174,6 +174,52 @@ class GeneratedObjectMappingTest {
     }
 
     @Test
+    void json_should_map_to_DiscoveryTriggerRequest_intraday() throws JsonProcessingException {
+        String json = "{\n" +
+                "  \"discoveryOperation\": \"INTRADAY\"\n" +
+                "}";
+
+        DiscoveryTriggerRequest request = mapper.readValue(json, DiscoveryTriggerRequest.class);
+        assertThat(toText(request.getDiscoveryOperation())).isEqualTo("INTRADAY");
+    }
+
+    @Test
+    void json_should_map_to_DiscoveryTriggerRequest_nightly() throws JsonProcessingException {
+        String json = "{\n" +
+                "  \"discoveryOperation\": \"NIGHTLY\"\n" +
+                "}";
+
+        DiscoveryTriggerRequest request = mapper.readValue(json, DiscoveryTriggerRequest.class);
+        assertThat(toText(request.getDiscoveryOperation())).isEqualTo("NIGHTLY");
+    }
+
+    @Test
+    void json_should_map_to_DiscoveryTriggerResponse_object() throws JsonProcessingException {
+        String json = "{\n" +
+                "  \"discoveryOperation\": \"NIGHTLY\",\n" +
+                "  \"message\": \"Discovery run dispatched.\",\n" +
+                "  \"correlationId\": \"8f14e45f-ceea-467e-adc5-5b3a4dee8a5a\"\n" +
+                "}";
+
+        DiscoveryTriggerResponse response = mapper.readValue(json, DiscoveryTriggerResponse.class);
+        assertThat(toText(response.getDiscoveryOperation())).isEqualTo("NIGHTLY");
+        assertThat(response.getMessage()).isEqualTo("Discovery run dispatched.");
+        assertThat(response.getCorrelationId()).isEqualTo("8f14e45f-ceea-467e-adc5-5b3a4dee8a5a");
+    }
+
+    @Test
+    void json_should_map_to_DiscoveryTriggerResponse_without_correlationId() throws JsonProcessingException {
+        String json = "{\n" +
+                "  \"discoveryOperation\": \"INTRADAY\",\n" +
+                "  \"message\": \"Discovery run dispatched.\"\n" +
+                "}";
+
+        DiscoveryTriggerResponse response = mapper.readValue(json, DiscoveryTriggerResponse.class);
+        assertThat(toText(response.getDiscoveryOperation())).isEqualTo("INTRADAY");
+        assertThat(response.getCorrelationId()).isNull();
+    }
+
+    @Test
     void json_should_map_to_IngestionProcessByCaseRequest_object() throws JsonProcessingException {
         String json = "{\n" +
                 "  \"caseId\": \"c0b2d8c2-3d62-4d7c-a2f5-1a4efc1d0c3b\"\n" +
